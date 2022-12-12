@@ -22,9 +22,9 @@ const val MESSAGE_ERROR = "ERROR"
 )
 sealed class AgentSocketMessage(
     val command: String,
+    val exchangeId: Int = 0,
     open val data: Any? = null,
-
-    ) {
+) {
     override fun toString(): String {
         return "${this.javaClass.name}($data)"
     }
@@ -37,12 +37,16 @@ interface AgentSocketMessageResponse {
 
 class GenericErrorResponse(
     override val errorCode: Int,
-    override val errorMessage: String?
+    override val errorMessage: String?,
+    exchangeId: Int = 0
 ) :
-    AgentSocketMessage(MESSAGE_ERROR), AgentSocketMessageResponse
+    AgentSocketMessage(MESSAGE_ERROR, exchangeId), AgentSocketMessageResponse
 
 class ServerHelloMessage(override val data: ServerDescription) : AgentSocketMessage(MESSAGE_SERVER_HELLO)
 class AgentHelloMessage(override val data: AgentClientDescription) : AgentSocketMessage(MESSAGE_AGENT_HELLO)
 
-class ClientInitMessage(override val data: String) : AgentSocketMessage(MESSAGE_CLIENT_INIT)
-class ClientInitResponseMessage(override val data: String) : AgentSocketMessage(MESSAGE_INIT_RESPONSE)
+class ClientInitMessage(override val data: ClientInitPayload, exchangeId: Int) :
+    AgentSocketMessage(MESSAGE_CLIENT_INIT, exchangeId)
+
+class ClientInitResponseMessage(override val data: ClientInitResponsePayload, exchangeId: Int) :
+    AgentSocketMessage(MESSAGE_INIT_RESPONSE, exchangeId)

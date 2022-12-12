@@ -3,14 +3,19 @@ package fr.f4fez.signaling.agent
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import fr.f4fez.signaling.ServerDescription
-import fr.f4fez.signaling.client.ClientSignalCommand
 import mu.KotlinLogging
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
+import reactor.core.publisher.MonoSink
+import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Consumer
 
-class AgentSessionSocket private constructor(private val agentSession: AgentSession) {
+class AgentSessionSocket private constructor(
+    private val agentSession: AgentSession, private val handshakeDone: Consumer<AgentSession>
+) {
     private val logger = KotlinLogging.logger {}
     private val serverDescription = ServerDescription()
     private val objectMapper: ObjectMapper = jacksonObjectMapper()
@@ -18,14 +23,17 @@ class AgentSessionSocket private constructor(private val agentSession: AgentSess
     lateinit var webSocketPublisher: Mono<Void>
         private set
 
-    private var handshakeDone = false
+    private var handshakeDoneFlag = false
+    private var exchangeIdCounter = AtomicInteger()
+    private var sessionExchangeCallbacks: MutableMap<Int, AgentSessionExchangeCallback> =
+        Collections.synchronizedMap(mutableMapOf())
 
-    constructor(session: WebSocketSession, agentSession: AgentSession) : this(agentSession) {
-        val input = session.receive()
-            .doOnNext {
+    constructor(session: WebSocketSession, agentSession: AgentSession, handshakeDone: Consumer<AgentSession>) : this(
+        agentSession, handshakeDone
+    ) {
+        val input = session.receive().doOnNext {
                 processMessage(it.payloadAsText)
-            }
-            .then()
+            }.then()
 
         val helloFlux = Flux.from(Mono.just(ServerHelloMessage(serverDescription)))
         val connectionFlux = Flux.create {
@@ -38,9 +46,14 @@ class AgentSessionSocket private constructor(private val agentSession: AgentSess
         this.webSocketPublisher = Mono.zip(input, output).then()
     }
 
+    fun clientSignal(sdp: String): Mono<String> {
+        val exchangeId = exchangeIdCounter.getAndIncrement()
+        val mono = Mono.create<AgentSocketMessage> {
+            sessionExchangeCallbacks[exchangeId] = AgentSessionExchangeCallback(it) //FIXME add expiration
+        }.map { it.data as String }
+        sendExchange(ClientInitMessage(ClientInitPayload(sdp), exchangeId))
 
-    fun clientSignal(clientSignalCommand: ClientSignalCommand) {
-        sendExchange(ClientInitMessage(clientSignalCommand.clientSdp))
+        return mono
     }
 
     private fun sendExchange(agentSocketMessage: AgentSocketMessage) {
@@ -52,8 +65,7 @@ class AgentSessionSocket private constructor(private val agentSession: AgentSess
         try {
             processDeserializedMessage(
                 objectMapper.readValue(
-                    message,
-                    AgentSocketMessage::class.java
+                    message, AgentSocketMessage::class.java
                 )
             )
             logger.trace { "Valid socket message received: $message" }
@@ -69,7 +81,7 @@ class AgentSessionSocket private constructor(private val agentSession: AgentSess
     private fun processDeserializedMessage(message: AgentSocketMessage) {
         when (message) {
             is AgentHelloMessage -> processAgentHello(message)
-            is ClientInitResponseMessage -> TODO()
+            is ClientInitResponseMessage -> processAgentInitResponse(message)
             is GenericErrorResponse -> processInvalidMessageCommand(message.command)
             is ClientInitMessage -> processInvalidMessageCommand(message.command)
             is ServerHelloMessage -> processInvalidMessageCommand(message.command)
@@ -77,18 +89,32 @@ class AgentSessionSocket private constructor(private val agentSession: AgentSess
     }
 
     private fun processAgentHello(message: AgentHelloMessage) {
-        if (handshakeDone) {
-            logger.info { "[${this.agentSession.agentClientDescription?.agentName}] Received Agent hello more than one time. ${message.data}" }
-            agentSessionSocketEmitter.close()
+        if (handshakeDoneFlag) {
+            sendErrorAndClose(104, "Received Agent hello more than one time. ${message.data}", message.exchangeId)
         } else {
-            agentSession.setAgentHello(message.data)
-            handshakeDone = true
+            agentSession.agentClientDescription = message.data
+            handshakeDoneFlag = true
+            handshakeDone.accept(agentSession)
         }
     }
 
+    private fun processAgentInitResponse(message: ClientInitResponseMessage) {
+        val callback = sessionExchangeCallbacks[message.exchangeId]
+
+        callback?.responseReceived(message) ?: sendErrorAndClose(
+            103,
+            "Can't find client init SDP request",
+            message.exchangeId
+        )
+    }
+
     private fun processInvalidMessageCommand(commandName: String) {
-        logger.info { "[${this.agentSession.agentClientDescription?.agentName}] Server received invalid command name: $commandName not allowed." }
-        sendExchange(GenericErrorResponse(102, "Server received invalid command name: $commandName not allowed."))
+        sendErrorAndClose(102, "Server received invalid command name: $commandName not allowed.")
+    }
+
+    private fun sendErrorAndClose(code: Int, message: String, exchangeId: Int = 0) {
+        logger.debug { "[${this.agentSession.agentClientDescription?.agentName}] $message" }
+        sendExchange(GenericErrorResponse(code, message, exchangeId))
         agentSessionSocketEmitter.close()
     }
 
@@ -99,6 +125,12 @@ class AgentSessionSocket private constructor(private val agentSession: AgentSess
 
         fun close() {
             sink.complete()
+        }
+    }
+
+    private inner class AgentSessionExchangeCallback(val sink: MonoSink<AgentSocketMessage>) {
+        fun responseReceived(agentSocketMessage: AgentSocketMessage) {
+            sink.success(agentSocketMessage)
         }
     }
 
