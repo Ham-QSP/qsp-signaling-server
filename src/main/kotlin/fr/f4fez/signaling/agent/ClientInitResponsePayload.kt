@@ -16,5 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 package fr.f4fez.signaling.agent
 
 data class ClientInitResponsePayload(
-    val sdp: String
+    val sdp: String,
+    val agentSessionUuid: String
 )

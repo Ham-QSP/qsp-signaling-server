@@ -56,9 +56,7 @@ class AgentSessionSocket private constructor(
     ) : this(
         agentSession, onHandshakeDone, onConnectionEnd
     ) {
-        val input = session.receive().doOnNext { processMessage(it.payloadAsText) }
-            .doOnError { logger.info { "Receive session error ${it.message}" } }
-            .doAfterTerminate { processConnectionEnd() }.then()
+        val input = session.receive().doOnNext { processMessage(it.payloadAsText) }.then()
 
         val helloFlux = Flux.from(Mono.just(ServerHelloMessage(serverDescription)))
         val connectionFlux = Flux.create {
@@ -66,6 +64,13 @@ class AgentSessionSocket private constructor(
         }
 
         val source = Flux.concat(helloFlux, connectionFlux)
+            .doOnError {
+            logger.info { "Session ${session.id} received error: ${it.message}" }
+            processConnectionEnd()
+        }.doAfterTerminate {
+                logger.info { "Session ${session.id} terminated" }
+                processConnectionEnd()
+            }
         val output = session.send(source.map { objectMapper.writeValueAsString(it) }.map(session::textMessage))
 
         this.webSocketPublisher = Mono.zip(input, output).then()
