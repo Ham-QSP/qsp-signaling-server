@@ -65,10 +65,16 @@ class AgentSessionSocket private constructor(
 
         val source = Flux.concat(helloFlux, connectionFlux)
             .doOnError {
-            logger.info { "Session ${session.id} received error: ${it.message}" }
-            processConnectionEnd()
-        }.doAfterTerminate {
+                logger.info { "Session ${session.id} received error: ${it.message}" }
+                processConnectionEnd()
+            }.doAfterTerminate {
                 logger.info { "Session ${session.id} terminated" }
+                processConnectionEnd()
+            }.doOnComplete {
+                logger.info { "Session ${session.id} completed" }
+                processConnectionEnd()
+            }.doOnCancel {
+                logger.info { "Session ${session.id} canceled" }
                 processConnectionEnd()
             }
         val output = session.send(source.map { objectMapper.writeValueAsString(it) }.map(session::textMessage))
