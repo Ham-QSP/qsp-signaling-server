@@ -19,6 +19,7 @@ import fr.f4fez.signaling.client.AgentSessionDto
 import fr.f4fez.signaling.client.ClientSignalCommand
 import fr.f4fez.signaling.client.ClientSignalResponse
 import fr.f4fez.signaling.client.SessionNotFoundException
+import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -27,6 +28,7 @@ import java.util.*
 
 @Component
 class AgentService {
+    private val logger = KotlinLogging.logger {}
     private val sessions: MutableMap<String, AgentSession> = Collections.synchronizedMap(mutableMapOf())
 
     fun registerSession(session: AgentSession) {
@@ -38,6 +40,7 @@ class AgentService {
     }
 
     fun signalClient(clientSignalCommand: ClientSignalCommand): Mono<ClientSignalResponse> {
+        logger.debug("Client signal for agent session: ${clientSignalCommand.agentSessionId}")
         return sessions[clientSignalCommand.agentSessionId]?.signalClient(clientSignalCommand)
             ?: Mono.error { SessionNotFoundException("No matching agent session found") }
 

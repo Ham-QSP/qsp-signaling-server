@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/client")
+@CrossOrigin(origins = ["http://localhost:5173"])
 class ClientController(val agentService: AgentService) {
 
     @PostMapping("signal")

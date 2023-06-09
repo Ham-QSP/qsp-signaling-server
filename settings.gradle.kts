@@ -4,4 +4,4 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-rootProject.name = "signaling"
+rootProject.name = "qsp-signaling"
