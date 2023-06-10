@@ -1,5 +1,5 @@
 FROM eclipse-temurin:17-jdk AS builder
-ARG JAR_FILE=build/libs/*.jar
+ARG JAR_FILE=build/libs/qsp-signaling-0.0.1-SNAPSHOT.jar
 COPY ${JAR_FILE} application.jar
 RUN java -Djarmode=layertools -jar application.jar extract
 
