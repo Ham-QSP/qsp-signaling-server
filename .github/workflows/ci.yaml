@@ -3,7 +3,7 @@ name: Signaling server CI
 on:
   push:
     branches:
-      - master
+      - main
       - ciTest
 
 jobs:
