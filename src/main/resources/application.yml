@@ -1,2 +1,4 @@
+server:
+  port: 8085
 logging.level:
   fr.f4fez: TRACE
