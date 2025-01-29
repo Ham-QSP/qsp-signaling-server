@@ -39,7 +39,7 @@ class AgentSession(
     }
 
     fun signalClient(clientSignalCommand: ClientSignalCommand): Mono<ClientSignalResponse> {
-        logger.debug { "[${this.agentClientDescription?.agentName}] Generate client signal message" }
+        logger.debug { "{$sessionId} Send client init" }
         return agentSessionSocket.clientSignal(clientSignalCommand.clientSdp).map { ClientSignalResponse(it.sdp) }
     }
 

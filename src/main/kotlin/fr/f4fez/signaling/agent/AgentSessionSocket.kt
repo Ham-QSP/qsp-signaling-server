@@ -44,7 +44,7 @@ class AgentSessionSocket private constructor(
         private set
 
     private var handshakeDoneFlag = false
-    private var exchangeIdCounter = AtomicInteger()
+    private var exchangeIdCounter = AtomicInteger(1)
     private var sessionExchangeCallbacks: MutableMap<Int, AgentSessionExchangeCallback> =
         Collections.synchronizedMap(mutableMapOf())
 
@@ -65,16 +65,16 @@ class AgentSessionSocket private constructor(
 
         val source = Flux.concat(helloFlux, connectionFlux)
             .doOnError {
-                logger.info { "Session ${session.id} received error: ${it.message}" }
+                logger.info { "{${agentSession.sessionId}} Session received error: ${it.message}" }
                 processConnectionEnd()
             }.doAfterTerminate {
-                logger.info { "Session ${session.id} terminated" }
+                logger.info { "{${agentSession.sessionId}} Session terminated" }
                 processConnectionEnd()
             }.doOnComplete {
-                logger.info { "Session ${session.id} completed" }
+                logger.info { "{${agentSession.sessionId}} Session completed" }
                 processConnectionEnd()
             }.doOnCancel {
-                logger.info { "Session ${session.id} canceled" }
+                logger.info { "{${agentSession.sessionId}} Session canceled" }
                 processConnectionEnd()
             }
         val output = session.send(source.map { objectMapper.writeValueAsString(it) }.map(session::textMessage))
@@ -87,6 +87,7 @@ class AgentSessionSocket private constructor(
         val mono = Mono.create<AgentSocketMessage> {
             sessionExchangeCallbacks[exchangeId] = AgentSessionExchangeCallback(it) //TODO add expiration
         }.map { it.data as ClientInitResponsePayload }
+        logger.trace { "{${agentSession.sessionId}} Register signal exchange callback for exchangeId: $exchangeId" }
         sendExchange(ClientInitMessage(ClientInitPayload(sdp), exchangeId))
 
         return mono
@@ -129,13 +130,13 @@ class AgentSessionSocket private constructor(
             agentSession.agentClientDescription = message.data
             handshakeDoneFlag = true
             onHandshakeDone.accept(agentSession)
-            logger.info { "Agent registered ${message.data}" }
+            logger.info { "{${agentSession.sessionId}} Agent registered ${message.data}" }
         }
     }
 
     private fun processAgentInitResponse(message: ClientInitResponseMessage) {
-        val callback = sessionExchangeCallbacks[message.exchangeId]
-
+        val callback = sessionExchangeCallbacks.remove(message.exchangeId)
+        logger.trace { "{${agentSession.sessionId}} Call callback for exchangeId: ${message.exchangeId}" }
         callback?.responseReceived(message) ?: sendErrorAndClose(
             103, "Can't find client init SDP request", message.exchangeId
         )
