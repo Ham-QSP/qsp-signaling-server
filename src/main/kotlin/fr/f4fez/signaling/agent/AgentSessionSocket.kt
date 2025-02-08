@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 package fr.f4fez.signaling.agent
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import fr.f4fez.signaling.ServerDescription
@@ -38,7 +39,7 @@ class AgentSessionSocket private constructor(
 ) {
     private val logger = KotlinLogging.logger {}
     private val serverDescription = ServerDescription()
-    private val objectMapper: ObjectMapper = jacksonObjectMapper()
+    private val objectMapper: ObjectMapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     private lateinit var agentSessionSocketEmitter: AgentSessionSocketEmitter
     lateinit var webSocketPublisher: Mono<Void>
         private set
