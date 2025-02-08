@@ -16,9 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 package fr.f4fez.signaling
 
 data class ServerDescription(
+    val serverName: String = "Dev server",
     val serverType: String = "QSP Simple Signal Server",
     val version: String = "0.1.0",
     val protocolMajorVersion: Int = 0,
-    val protocolMinorVersion: Int = 1,
-    val serverName: String = "Dev server"
+    val protocolMinorVersion: Int = 1
 )

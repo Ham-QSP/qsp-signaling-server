@@ -1,8 +1,21 @@
+qsp:
+  serverName: "Local dev server"
+
 server:
   port: 7080
-logging.level:
-  fr.f4fez: TRACE
+
+database:
+  postgresql:
+    host: "localhost"
+    port: 5432
+    username: "postgres"
+    password: "pgpass"
+    database: "postgres"
+
 
 agent:
   hmac:
     keyLength: 64
+
+logging.level:
+  fr.f4fez: TRACE
