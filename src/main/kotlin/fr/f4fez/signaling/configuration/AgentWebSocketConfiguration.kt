@@ -13,10 +13,12 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-package fr.f4fez.signaling
+package fr.f4fez.signaling.configuration
 
+import fr.f4fez.signaling.ServerDescription
 import fr.f4fez.signaling.agent.AgentService
 import fr.f4fez.signaling.agent.AgentWebSocketHandler
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.HandlerMapping
@@ -25,10 +27,14 @@ import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping
 @Configuration
 class AgentWebSocketConfiguration(val agentService: AgentService) {
     @Bean
-    fun handlerMapping(): HandlerMapping {
-        val map = mapOf("/server/session" to AgentWebSocketHandler(agentService))
+    fun handlerMapping(serverDescription: ServerDescription): HandlerMapping {
+        val map = mapOf("/server/session" to AgentWebSocketHandler(agentService, serverDescription))
         val order = -1 // before annotated controllers
 
         return SimpleUrlHandlerMapping(map, order)
     }
+
+    @Bean
+    fun serverDescription(@Value("\${qsp.serverName}") name: String): ServerDescription =
+        ServerDescription(name)
 }

@@ -24,17 +24,17 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 
 @Configuration
 @EnableR2dbcRepositories
-class R2DBCConfiguration : AbstractR2dbcConfiguration() {
+class R2DBCConfiguration(val config: PostgresConfigurationProperties) : AbstractR2dbcConfiguration() {
 
     @Bean
     override fun connectionFactory(): ConnectionFactory {
         return PostgresqlConnectionFactory(
             PostgresqlConnectionConfiguration.builder()
-                .host("localhost")
-                .port(5432)
-                .username("postgres")
-                .password("pgpass")
-                .database("postgres")
+                .host(config.host)
+                .port(config.port)
+                .username(config.username)
+                .password(config.password)
+                .database(config.database)
                 .build()
         )
     }
