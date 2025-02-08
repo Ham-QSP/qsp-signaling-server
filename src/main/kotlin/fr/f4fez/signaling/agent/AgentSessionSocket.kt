@@ -35,10 +35,9 @@ import java.util.function.Consumer
 class AgentSessionSocket private constructor(
     private val agentSession: AgentSession,
     private val onHandshakeDone: Consumer<AgentSession>,
-    private val onConnectionEnd: Consumer<AgentSession>
+    private val onConnectionEnd: Consumer<AgentSession>,
 ) {
     private val logger = KotlinLogging.logger {}
-    private val serverDescription = ServerDescription()
     private val objectMapper: ObjectMapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     private lateinit var agentSessionSocketEmitter: AgentSessionSocketEmitter
     lateinit var webSocketPublisher: Mono<Void>
@@ -53,7 +52,8 @@ class AgentSessionSocket private constructor(
         session: WebSocketSession,
         agentSession: AgentSession,
         onHandshakeDone: Consumer<AgentSession>,
-        onConnectionEnd: Consumer<AgentSession>
+        onConnectionEnd: Consumer<AgentSession>,
+        serverDescription: ServerDescription,
     ) : this(
         agentSession, onHandshakeDone, onConnectionEnd
     ) {

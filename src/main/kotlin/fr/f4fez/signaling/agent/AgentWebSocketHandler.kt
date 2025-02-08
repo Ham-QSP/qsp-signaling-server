@@ -15,16 +15,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 
 package fr.f4fez.signaling.agent
 
+import fr.f4fez.signaling.ServerDescription
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Mono
 
-class AgentWebSocketHandler(private val agentService: AgentService) : WebSocketHandler {
+class AgentWebSocketHandler(private val agentService: AgentService,
+                            private val serverDescription: ServerDescription,
+    ) : WebSocketHandler {
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         val agentSession = AgentSession(session,
             { agentService.registerSession(it) },
-            { agentService.unregisterSession(it.sessionId) })
+            { agentService.unregisterSession(it.sessionId) },
+            serverDescription)
         return agentSession.agentSessionSocket.webSocketPublisher
     }
 
