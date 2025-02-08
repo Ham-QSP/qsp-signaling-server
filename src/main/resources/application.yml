@@ -1,4 +1,8 @@
 server:
-  port: 8085
+  port: 7080
 logging.level:
   fr.f4fez: TRACE
+
+agent:
+  hmac:
+    keyLength: 64
