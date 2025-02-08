@@ -32,31 +32,26 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 
-class AgentSessionSocket private constructor(
+class AgentSessionSocket(
     private val agentSession: AgentSession,
     private val onHandshakeDone: Consumer<AgentSession>,
     private val onConnectionEnd: Consumer<AgentSession>,
 ) {
     private val logger = KotlinLogging.logger {}
-    private val objectMapper: ObjectMapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    private val objectMapper: ObjectMapper =
+        jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     private lateinit var agentSessionSocketEmitter: AgentSessionSocketEmitter
-    lateinit var webSocketPublisher: Mono<Void>
-        private set
 
     private var handshakeDoneFlag = false
     private var exchangeIdCounter = AtomicInteger(1)
     private var sessionExchangeCallbacks: MutableMap<Int, AgentSessionExchangeCallback> =
         Collections.synchronizedMap(mutableMapOf())
 
-    constructor(
+    fun startSession(
         session: WebSocketSession,
         agentSession: AgentSession,
-        onHandshakeDone: Consumer<AgentSession>,
-        onConnectionEnd: Consumer<AgentSession>,
         serverDescription: ServerDescription,
-    ) : this(
-        agentSession, onHandshakeDone, onConnectionEnd
-    ) {
+    ): Mono<Void> {
         val input = session.receive().doOnNext { processMessage(it.payloadAsText) }.then()
 
         val helloFlux = Flux.from(Mono.just(ServerHelloMessage(serverDescription)))
@@ -80,7 +75,7 @@ class AgentSessionSocket private constructor(
             }
         val output = session.send(source.map { objectMapper.writeValueAsString(it) }.map(session::textMessage))
 
-        this.webSocketPublisher = Mono.zip(input, output).then()
+        return Mono.zip(input, output).then()
     }
 
     fun clientSignal(sdp: String): Mono<ClientInitResponsePayload> {

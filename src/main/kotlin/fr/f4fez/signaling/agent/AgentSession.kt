@@ -15,20 +15,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 
 package fr.f4fez.signaling.agent
 
-import fr.f4fez.signaling.ServerDescription
 import fr.f4fez.signaling.client.ClientSignalCommand
 import fr.f4fez.signaling.client.ClientSignalResponse
 import mu.KotlinLogging
-import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Mono
 import java.util.*
 import java.util.function.Consumer
 
 class AgentSession(
-    session: WebSocketSession,
     onHandshakeDone: Consumer<AgentSession>,
     onConnectionEnd: Consumer<AgentSession>,
-    serverDescription: ServerDescription,
 ) {
     var agentClientDescription: AgentClientDescription? = null
     private val logger = KotlinLogging.logger {}
@@ -36,7 +32,7 @@ class AgentSession(
     val sessionId: String
 
     init {
-        this.agentSessionSocket = AgentSessionSocket(session, this, onHandshakeDone, onConnectionEnd, serverDescription)
+        this.agentSessionSocket = AgentSessionSocket(this, onHandshakeDone, onConnectionEnd)
         this.sessionId = UUID.randomUUID().toString()
     }
 
