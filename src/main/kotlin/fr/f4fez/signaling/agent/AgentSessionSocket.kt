@@ -22,7 +22,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import fr.f4fez.signaling.ServerDescription
 import fr.f4fez.signaling.client.AgentDisconnectedException
 import fr.f4fez.signaling.client.SessionNotFoundException
+import fr.f4fez.signaling.management.dal.AgentRepository
 import mu.KotlinLogging
+import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
@@ -36,6 +38,7 @@ class AgentSessionSocket(
     private val agentSession: AgentSession,
     private val onHandshakeDone: Consumer<AgentSession>,
     private val onConnectionEnd: Consumer<AgentSession>,
+    private val agentRepository: AgentRepository,
 ) {
     private val logger = KotlinLogging.logger {}
     private val objectMapper: ObjectMapper =
@@ -52,14 +55,14 @@ class AgentSessionSocket(
         agentSession: AgentSession,
         serverDescription: ServerDescription,
     ): Mono<Void> {
-        val input = session.receive().doOnNext { processMessage(it.payloadAsText) }.then()
+        val input = messageProcessing(session.receive())
 
         val helloFlux = Flux.from(Mono.just(ServerHelloMessage(serverDescription)))
         val connectionFlux = Flux.create {
             agentSessionSocketEmitter = AgentSessionSocketEmitter(it)
         }
 
-        val source = Flux.concat(helloFlux, connectionFlux)
+        val source = connectionFlux.startWith(helloFlux)
             .doOnError {
                 logger.info { "{${agentSession.sessionId}} Session received error: ${it.message}" }
                 processConnectionEnd()
@@ -94,19 +97,34 @@ class AgentSessionSocket(
         agentSessionSocketEmitter.sendExchange(agentSocketMessage)
     }
 
-    private fun processMessage(message: String) {
-        try {
-            processDeserializedMessage(
-                objectMapper.readValue(
-                    message, AgentSocketMessage::class.java
-                )
-            )
-            logger.trace { "Valid socket message received: $message" }
+    private fun messageProcessing(webSocketMessageFlux: Flux<WebSocketMessage>): Mono<Void> {
+        return webSocketMessageFlux.mapNotNull { deserializeMessage(it) }
+            .flatMap { message -> checkAuthentication(message!!) }
+            .doOnNext { it?.let { processDeserializedMessage(it) } }
+            .then()
+    }
 
+    private fun checkAuthentication(message: AgentSocketMessage): Mono<AgentSocketMessage> {
+       val flux =  if (message is AgentHelloMessage) {
+            val agentId = UUID.fromString(message.data.agentId)
+            val ret: Mono<AgentSocketMessage> = agentRepository.findById(agentId)
+                .switchIfEmpty(Mono.error(NullPointerException("Agent not found")))
+                .doOnNext {  }
+                .map { _ -> message }
+            ret
+        } else {
+            Mono.just(message)
+        }
+        return flux
+    }
+
+    private fun deserializeMessage(message: WebSocketMessage): AgentSocketMessage? {
+        try {
+            return objectMapper.readValue(message.payloadAsText, AgentSocketMessage::class.java)
         } catch (e: JsonProcessingException) {
             sendErrorAndClose(101, "Failed to decode message ${e.message}")
+            return null
         }
-
     }
 
     private fun processDeserializedMessage(message: AgentSocketMessage) {
