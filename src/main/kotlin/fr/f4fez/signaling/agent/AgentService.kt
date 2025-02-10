@@ -27,7 +27,7 @@ import reactor.kotlin.core.publisher.toFlux
 import java.util.*
 
 @Component
-class AgentService {
+class AgentService(val agentSessionSocketService: AgentSessionSocketService) {
     private val logger = KotlinLogging.logger {}
     private val sessions: MutableMap<String, AgentSession> = Collections.synchronizedMap(mutableMapOf())
 
@@ -41,9 +41,14 @@ class AgentService {
 
     fun signalClient(clientSignalCommand: ClientSignalCommand): Mono<ClientSignalResponse> {
         logger.debug("Client signal for agent session: ${clientSignalCommand.agentSessionId}")
-        return sessions[clientSignalCommand.agentSessionId]?.signalClient(clientSignalCommand)
-            ?: Mono.error { SessionNotFoundException("No matching agent session found") }
-
+        val agentSession = sessions[clientSignalCommand.agentSessionId]
+        return if (agentSession == null) {
+            Mono.error { SessionNotFoundException("No matching agent session found") }
+        }
+        else {
+            agentSessionSocketService.clientSignal(agentSession, clientSignalCommand.clientSdp)
+                .map { ClientSignalResponse(it.sdp) }
+        }
     }
 
     fun getSessions(): Flux<AgentSessionDto> =

@@ -17,6 +17,7 @@ package fr.f4fez.signaling.configuration
 
 import fr.f4fez.signaling.ServerDescription
 import fr.f4fez.signaling.agent.AgentService
+import fr.f4fez.signaling.agent.AgentSessionSocketService
 import fr.f4fez.signaling.agent.AgentWebSocketHandler
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -27,8 +28,8 @@ import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping
 @Configuration
 class AgentWebSocketConfiguration(val agentService: AgentService) {
     @Bean
-    fun handlerMapping(serverDescription: ServerDescription): HandlerMapping {
-        val map = mapOf("/server/session" to AgentWebSocketHandler(agentService, serverDescription))
+    fun handlerMapping(serverDescription: ServerDescription, agentSessionSocketService: AgentSessionSocketService): HandlerMapping {
+        val map = mapOf("/server/session" to AgentWebSocketHandler(serverDescription, agentSessionSocketService))
         val order = -1 // before annotated controllers
 
         return SimpleUrlHandlerMapping(map, order)

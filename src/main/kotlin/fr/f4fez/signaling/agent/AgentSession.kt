@@ -15,30 +15,45 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 
 package fr.f4fez.signaling.agent
 
-import fr.f4fez.signaling.client.ClientSignalCommand
-import fr.f4fez.signaling.client.ClientSignalResponse
-import mu.KotlinLogging
-import reactor.core.publisher.Mono
+import reactor.core.publisher.FluxSink
+import reactor.core.publisher.MonoSink
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 
 class AgentSession(
-    onHandshakeDone: Consumer<AgentSession>,
-    onConnectionEnd: Consumer<AgentSession>,
+    val onHandshakeDone: Consumer<AgentSession>,
+    val onConnectionEnd: Consumer<AgentSession>,
 ) {
     var agentClientDescription: AgentClientDescription? = null
-    private val logger = KotlinLogging.logger {}
-    val agentSessionSocket: AgentSessionSocket
-    val sessionId: String
+    val sessionId: String = UUID.randomUUID().toString()
+    var agentSessionSocketEmitter: AgentSessionSocketEmitter? = null
 
-    init {
-        this.agentSessionSocket = AgentSessionSocket(this, onHandshakeDone, onConnectionEnd)
-        this.sessionId = UUID.randomUUID().toString()
+    var handshakeDoneFlag = false
+    var exchangeIdCounter = AtomicInteger(1)
+    var sessionExchangeCallbacks: MutableMap<Int, AgentSessionExchangeCallback> =
+        Collections.synchronizedMap(mutableMapOf())
+
+    inner class AgentSessionSocketEmitter(val sink: FluxSink<AgentSocketMessage>) {
+        fun sendExchange(agentSocketMessage: AgentSocketMessage) {
+            sink.next(agentSocketMessage)
+        }
+
+        fun close() {
+            sink.complete()
+        }
     }
 
-    fun signalClient(clientSignalCommand: ClientSignalCommand): Mono<ClientSignalResponse> {
-        logger.debug { "{$sessionId} Send client init" }
-        return agentSessionSocket.clientSignal(clientSignalCommand.clientSdp).map { ClientSignalResponse(it.sdp) }
+    inner class AgentSessionExchangeCallback(
+        val sink: MonoSink<AgentSocketMessage>
+    ) {
+        fun responseReceived(agentSocketMessage: AgentSocketMessage) {
+            sink.success(agentSocketMessage)
+        }
+
+        fun error(e: Throwable) {
+            sink.error(e)
+        }
     }
 
 }
