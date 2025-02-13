@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono
 import java.util.*
 
 interface AgentRepository : R2dbcRepository<AgentEntity, UUID> {
+    fun findByIdAndSecret(id: UUID, secret: String): Mono<AgentEntity>
     fun findByStationId(stationId: UUID): Flux<AgentEntity>
     fun deleteByIdAndStationId(id: UUID, stationId: UUID): Mono<Void>
     fun findByIdAndStationId(agentId: UUID, stationId: UUID): Mono<AgentEntity>

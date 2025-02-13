@@ -106,7 +106,7 @@ class AgentSessionSocketController(
     private fun checkAuthentication(agentSession: AgentSession, message: AgentSocketMessage): Mono<AgentSocketMessage> {
         val flux = if (message is AgentHelloMessage) {
             val agentId = UUID.fromString(message.data.agentId)
-            val ret: Mono<AgentSocketMessage> = agentRepository.findById(agentId)
+            val ret: Mono<AgentSocketMessage> = agentRepository.findByIdAndSecret(agentId, message.data.agentSecret)
                 .switchIfEmpty(Mono.error(NullPointerException("Agent not found")))
                 .map { it.toAgentInformation() }
                 .doOnNext { agentSession.agentInformation = it }
