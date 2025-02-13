@@ -15,43 +15,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 
 package fr.f4fez.signaling.agent
 
-import fr.f4fez.signaling.client.AgentSessionDto
 import fr.f4fez.signaling.client.ClientSignalCommand
 import fr.f4fez.signaling.client.ClientSignalResponse
 import fr.f4fez.signaling.client.SessionNotFoundException
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.toFlux
-import java.util.*
 
 @Component
-class AgentService(val agentSessionSocketService: AgentSessionSocketService) {
+class AgentService(
+    val sessionsService: AgentSessionService,
+    val agentSessionSocketController: AgentSessionSocketController) {
     private val logger = KotlinLogging.logger {}
-    private val sessions: MutableMap<String, AgentSession> = Collections.synchronizedMap(mutableMapOf())
 
-    fun registerSession(session: AgentSession) {
-        sessions[session.sessionId] = session
-    }
-
-    fun unregisterSession(sessionId: String) {
-        sessions.remove(sessionId)
-    }
 
     fun signalClient(clientSignalCommand: ClientSignalCommand): Mono<ClientSignalResponse> {
         logger.debug("Client signal for agent session: ${clientSignalCommand.agentSessionId}")
-        val agentSession = sessions[clientSignalCommand.agentSessionId]
+        val agentSession = sessionsService.getSession(clientSignalCommand.agentSessionId)
         return if (agentSession == null) {
             Mono.error { SessionNotFoundException("No matching agent session found") }
         }
         else {
-            agentSessionSocketService.clientSignal(agentSession, clientSignalCommand.clientSdp)
+            agentSessionSocketController.clientSignal(agentSession, clientSignalCommand.clientSdp)
                 .map { ClientSignalResponse(it.sdp) }
         }
     }
-
-    fun getSessions(): Flux<AgentSessionDto> =
-        sessions.values.map { AgentSessionDto(it.agentClientDescription!!.agentName, it.sessionId) }.toFlux()
 
 }

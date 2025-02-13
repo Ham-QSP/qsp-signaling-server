@@ -16,18 +16,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 package fr.f4fez.signaling.client
 
 import fr.f4fez.signaling.agent.AgentService
+import fr.f4fez.signaling.agent.AgentSessionService
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/client")
 @CrossOrigin(origins = ["http://localhost:5173"])
-class ClientController(val agentService: AgentService) {
+class ClientController(val agentService: AgentService,
+    val agentSessionService: AgentSessionService) {
 
     @PostMapping("signal")
     fun signal(@RequestBody clientSignalCommand: ClientSignalCommand) =
         agentService.signalClient(clientSignalCommand)
 
     @GetMapping("agents")
-    fun listAgents() = agentService.getSessions()
+    fun listAgents() = agentSessionService.getSessions()
 
 }

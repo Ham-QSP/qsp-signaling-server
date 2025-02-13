@@ -22,17 +22,26 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 
 class AgentSession(
-    val onHandshakeDone: Consumer<AgentSession>,
+    private val onHandshakeDone: Consumer<AgentSession>,
     val onConnectionEnd: Consumer<AgentSession>,
 ) {
-    var agentClientDescription: AgentClientDescription? = null
+    var agentInformation: AgentInformation? = null
+
+    var agentDescription: AgentClientDescription? = null
     val sessionId: String = UUID.randomUUID().toString()
     var agentSessionSocketEmitter: AgentSessionSocketEmitter? = null
-
     var handshakeDoneFlag = false
+        private set
+
     var exchangeIdCounter = AtomicInteger(1)
     var sessionExchangeCallbacks: MutableMap<Int, AgentSessionExchangeCallback> =
         Collections.synchronizedMap(mutableMapOf())
+
+    fun doHandshake(agentClientDescription: AgentClientDescription) {
+        agentDescription = agentClientDescription
+        handshakeDoneFlag = true
+        onHandshakeDone.accept(this)
+    }
 
     inner class AgentSessionSocketEmitter(val sink: FluxSink<AgentSocketMessage>) {
         fun sendExchange(agentSocketMessage: AgentSocketMessage) {

@@ -38,7 +38,6 @@ const val MESSAGE_ERROR = "ERROR"
 sealed class AgentSocketMessage(
     val command: String,
     val exchangeId: Int = 0,
-    val hmac: String? = null,
     open val data: Any? = null,
 ) {
     override fun toString(): String {

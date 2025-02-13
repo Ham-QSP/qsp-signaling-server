@@ -24,16 +24,19 @@ import fr.f4fez.signaling.client.AgentDisconnectedException
 import fr.f4fez.signaling.client.SessionNotFoundException
 import fr.f4fez.signaling.management.dal.AgentRepository
 import mu.KotlinLogging
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.*
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
-@Service
-class AgentSessionSocketService(
-    private val agentService: AgentService,
+
+@Component
+class AgentSessionSocketController(
+    private val agentSessionService: AgentSessionService,
     private val agentRepository: AgentRepository,
 ) {
     private val logger = KotlinLogging.logger {}
@@ -44,10 +47,7 @@ class AgentSessionSocketService(
         session: WebSocketSession,
         serverDescription: ServerDescription,
     ): Mono<Void> {
-        val agentSession = AgentSession(
-            { agentService.registerSession(it) },
-            { agentService.unregisterSession(it.sessionId) },
-        )
+        val agentSession = agentSessionService.createSession()
 
         val input = messageProcessing(agentSession, session.receive())
 
@@ -98,17 +98,19 @@ class AgentSessionSocketService(
         webSocketMessageFlux: Flux<WebSocketMessage>
     ): Mono<Void> {
         return webSocketMessageFlux.mapNotNull { deserializeMessage(agentSession, it) }
-            .flatMap { message -> checkAuthentication(message!!) }
+            .flatMap { message -> checkAuthentication(agentSession, message!!) }
             .doOnNext { it?.let { processDeserializedMessage(agentSession, it) } }
             .then()
     }
 
-    private fun checkAuthentication(message: AgentSocketMessage): Mono<AgentSocketMessage> {
+    private fun checkAuthentication(agentSession: AgentSession, message: AgentSocketMessage): Mono<AgentSocketMessage> {
         val flux = if (message is AgentHelloMessage) {
             val agentId = UUID.fromString(message.data.agentId)
             val ret: Mono<AgentSocketMessage> = agentRepository.findById(agentId)
                 .switchIfEmpty(Mono.error(NullPointerException("Agent not found")))
-                .doOnNext { }
+                .map { it.toAgentInformation() }
+                .doOnNext { agentSession.agentInformation = it }
+                .doOnNext { logger.debug("{{}} Login for agent id {{}}", agentSession.sessionId, it.id) }
                 .map { _ -> message }
             ret
         } else {
@@ -145,9 +147,7 @@ class AgentSessionSocketService(
                 message.exchangeId
             )
         } else {
-            agentSession.agentClientDescription = message.data
-            agentSession.handshakeDoneFlag = true
-            agentSession.onHandshakeDone.accept(agentSession)
+            agentSession.doHandshake(message.data)
             logger.info { "{${agentSession.sessionId}} Agent registered ${message.data}" }
         }
     }
@@ -165,7 +165,7 @@ class AgentSessionSocketService(
     }
 
     private fun sendErrorAndClose(agentSession: AgentSession, code: Int, message: String, exchangeId: Int = 0) {
-        logger.debug { "[${agentSession.agentClientDescription?.agentName}] $message" }
+        logger.debug { "[${agentSession.agentDescription?.agentName}] $message" }
         sendExchange(agentSession, GenericErrorResponse(code, message, exchangeId))
         agentSession.agentSessionSocketEmitter?.close()
         processConnectionEnd(agentSession)

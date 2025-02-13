@@ -22,11 +22,11 @@ import reactor.core.publisher.Mono
 
 class AgentWebSocketHandler(
     private val serverDescription: ServerDescription,
-    private val agentSessionSocketService: AgentSessionSocketService,
+    private val agentSessionSocketController: AgentSessionSocketController,
 ) : WebSocketHandler {
 
     override fun handle(session: WebSocketSession): Mono<Void> {
-        return agentSessionSocketService.startSession(session, serverDescription)
+        return agentSessionSocketController.startSession(session, serverDescription)
     }
 
 }
