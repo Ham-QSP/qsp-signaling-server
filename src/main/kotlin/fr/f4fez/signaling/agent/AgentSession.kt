@@ -15,34 +15,54 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 
 package fr.f4fez.signaling.agent
 
-import fr.f4fez.signaling.ServerDescription
-import fr.f4fez.signaling.client.ClientSignalCommand
-import fr.f4fez.signaling.client.ClientSignalResponse
-import mu.KotlinLogging
-import org.springframework.web.reactive.socket.WebSocketSession
-import reactor.core.publisher.Mono
+import reactor.core.publisher.FluxSink
+import reactor.core.publisher.MonoSink
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 
 class AgentSession(
-    session: WebSocketSession,
-    onHandshakeDone: Consumer<AgentSession>,
-    onConnectionEnd: Consumer<AgentSession>,
-    serverDescription: ServerDescription,
+    private val onHandshakeDone: Consumer<AgentSession>,
+    val onConnectionEnd: Consumer<AgentSession>,
 ) {
-    var agentClientDescription: AgentClientDescription? = null
-    private val logger = KotlinLogging.logger {}
-    val agentSessionSocket: AgentSessionSocket
-    val sessionId: String
+    var agentInformation: AgentInformation? = null
 
-    init {
-        this.agentSessionSocket = AgentSessionSocket(session, this, onHandshakeDone, onConnectionEnd, serverDescription)
-        this.sessionId = UUID.randomUUID().toString()
+    var agentDescription: AgentClientDescription? = null
+    val sessionId: String = UUID.randomUUID().toString()
+    var agentSessionSocketEmitter: AgentSessionSocketEmitter? = null
+    var handshakeDoneFlag = false
+        private set
+
+    var exchangeIdCounter = AtomicInteger(1)
+    var sessionExchangeCallbacks: MutableMap<Int, AgentSessionExchangeCallback> =
+        Collections.synchronizedMap(mutableMapOf())
+
+    fun doHandshake(agentClientDescription: AgentClientDescription) {
+        agentDescription = agentClientDescription
+        handshakeDoneFlag = true
+        onHandshakeDone.accept(this)
     }
 
-    fun signalClient(clientSignalCommand: ClientSignalCommand): Mono<ClientSignalResponse> {
-        logger.debug { "{$sessionId} Send client init" }
-        return agentSessionSocket.clientSignal(clientSignalCommand.clientSdp).map { ClientSignalResponse(it.sdp) }
+    inner class AgentSessionSocketEmitter(val sink: FluxSink<AgentSocketMessage>) {
+        fun sendExchange(agentSocketMessage: AgentSocketMessage) {
+            sink.next(agentSocketMessage)
+        }
+
+        fun close() {
+            sink.complete()
+        }
+    }
+
+    inner class AgentSessionExchangeCallback(
+        val sink: MonoSink<AgentSocketMessage>
+    ) {
+        fun responseReceived(agentSocketMessage: AgentSocketMessage) {
+            sink.success(agentSocketMessage)
+        }
+
+        fun error(e: Throwable) {
+            sink.error(e)
+        }
     }
 
 }

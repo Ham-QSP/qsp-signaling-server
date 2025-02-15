@@ -20,16 +20,13 @@ import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Mono
 
-class AgentWebSocketHandler(private val agentService: AgentService,
-                            private val serverDescription: ServerDescription,
-    ) : WebSocketHandler {
+class AgentWebSocketHandler(
+    private val serverDescription: ServerDescription,
+    private val agentSessionSocketController: AgentSessionSocketController,
+) : WebSocketHandler {
 
     override fun handle(session: WebSocketSession): Mono<Void> {
-        val agentSession = AgentSession(session,
-            { agentService.registerSession(it) },
-            { agentService.unregisterSession(it.sessionId) },
-            serverDescription)
-        return agentSession.agentSessionSocket.webSocketPublisher
+        return agentSessionSocketController.startSession(session, serverDescription)
     }
 
 }

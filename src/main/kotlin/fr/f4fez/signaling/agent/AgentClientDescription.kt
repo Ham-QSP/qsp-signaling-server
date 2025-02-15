@@ -20,5 +20,7 @@ data class AgentClientDescription (
     val version: String,
     val protocolMajorVersion: Int,
     val protocolMinorVersion: Int,
-    val agentName: String
+    val agentName: String,
+    val agentId: String,
+    val agentSecret: String,
 )
