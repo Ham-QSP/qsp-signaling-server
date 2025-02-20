@@ -19,10 +19,10 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import fr.f4fez.signaling.ServerDescription
 import fr.f4fez.signaling.client.AgentDisconnectedException
 import fr.f4fez.signaling.client.SessionNotFoundException
 import fr.f4fez.signaling.management.dal.AgentRepository
+import fr.f4fez.signaling.server.ServerDescription
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketMessage
@@ -30,8 +30,6 @@ import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.*
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 
 
 @Component
