@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: java
       - name: Set up JDK
@@ -30,7 +30,7 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew test
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
       - name: Upload build JAR
         uses: actions/upload-artifact@v4
         with:
