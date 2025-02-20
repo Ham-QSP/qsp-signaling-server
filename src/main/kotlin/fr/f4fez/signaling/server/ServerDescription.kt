@@ -13,20 +13,13 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-package fr.f4fez.signaling.agent
+package fr.f4fez.signaling.server
 
-import fr.f4fez.signaling.server.ServerDescription
-import org.springframework.web.reactive.socket.WebSocketHandler
-import org.springframework.web.reactive.socket.WebSocketSession
-import reactor.core.publisher.Mono
-
-class AgentWebSocketHandler(
-    private val serverDescription: ServerDescription,
-    private val agentSessionSocketController: AgentSessionSocketController,
-) : WebSocketHandler {
-
-    override fun handle(session: WebSocketSession): Mono<Void> {
-        return agentSessionSocketController.startSession(session, serverDescription)
-    }
-
-}
+data class ServerDescription(
+    val serverName: String = "Dev server",
+    val description: String = "Todo",
+    val protocolMinorVersion: Int = 1,
+    val serverType: String = "QSP Simple Signal Server",
+    val version: String = "0.1.0",
+    val protocolMajorVersion: Int = 0,
+)

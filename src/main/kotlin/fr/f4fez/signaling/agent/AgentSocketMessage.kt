@@ -17,7 +17,7 @@ package fr.f4fez.signaling.agent
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import fr.f4fez.signaling.ServerDescription
+import fr.f4fez.signaling.server.ServerDescription
 
 const val MESSAGE_SERVER_HELLO = "SERVER_HELLO"
 const val MESSAGE_AGENT_HELLO = "AGENT_HELLO"

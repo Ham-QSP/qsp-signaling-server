@@ -15,10 +15,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 
 package fr.f4fez.signaling.configuration
 
-import fr.f4fez.signaling.ServerDescription
 import fr.f4fez.signaling.agent.AgentService
 import fr.f4fez.signaling.agent.AgentSessionSocketController
 import fr.f4fez.signaling.agent.AgentWebSocketHandler
+import fr.f4fez.signaling.server.ServerDescription
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -36,6 +36,6 @@ class AgentWebSocketConfiguration(val agentService: AgentService) {
     }
 
     @Bean
-    fun serverDescription(@Value("\${qsp.serverName}") name: String): ServerDescription =
-        ServerDescription(name)
+    fun serverDescription(@Value("\${qsp.serverName}") name: String, @Value("\${qsp.serverDescription}") description: String): ServerDescription =
+        ServerDescription(name, description)
 }

@@ -1,5 +1,6 @@
 qsp:
   serverName: "Local dev server"
+  serverDescription: "Local execution of the signaling server"
 
 server:
   port: 7080

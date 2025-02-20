@@ -13,12 +13,16 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-package fr.f4fez.signaling
+package fr.f4fez.signaling.server
 
-data class ServerDescription(
-    val serverName: String = "Dev server",
-    val serverType: String = "QSP Simple Signal Server",
-    val version: String = "0.1.0",
-    val protocolMajorVersion: Int = 0,
-    val protocolMinorVersion: Int = 1
-)
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+@RestController
+@RequestMapping("/server")
+class ServerController(private val serverDescription: ServerDescription) {
+
+    @GetMapping("/description")
+    fun getServerDescription() = serverDescription
+}
