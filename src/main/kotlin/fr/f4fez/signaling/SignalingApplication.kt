@@ -16,9 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 package fr.f4fez.signaling
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.runApplication
 
-@SpringBootApplication
+@SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 class SignalingApplication
 
 fun main(args: Array<String>) {
