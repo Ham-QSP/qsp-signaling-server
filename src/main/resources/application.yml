@@ -5,14 +5,11 @@ qsp:
 server:
   port: 7080
 
-database:
-  postgresql:
-    host: "localhost"
-    port: 5432
-    username: "postgres"
-    password: "pgpass"
-    database: "postgres"
-
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: pgpass
 
 agent:
   hmac:
