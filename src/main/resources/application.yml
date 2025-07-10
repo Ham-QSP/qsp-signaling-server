@@ -5,20 +5,11 @@ qsp:
 server:
   port: 7080
 
-database:
-  postgresql:
-    host: "localhost"
-    port: 5432
-    username: "postgres"
-    password: "pgpass"
-    database: "postgres"
-
 spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://idp.example.com/issuer
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: pgpass
 
 agent:
   hmac:
@@ -26,4 +17,3 @@ agent:
 
 logging.level:
   fr.f4fez: TRACE
-  org.springframework.security: DEBUG
