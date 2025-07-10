@@ -23,7 +23,7 @@ import fr.f4fez.signaling.client.AgentDisconnectedException
 import fr.f4fez.signaling.client.SessionNotFoundException
 import fr.f4fez.signaling.management.dal.AgentRepository
 import fr.f4fez.signaling.server.ServerDescription
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession

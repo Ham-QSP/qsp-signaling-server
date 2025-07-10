@@ -18,7 +18,7 @@ package fr.f4fez.signaling.agent
 import fr.f4fez.signaling.client.ClientSignalCommand
 import fr.f4fez.signaling.client.ClientSignalResponse
 import fr.f4fez.signaling.client.SessionNotFoundException
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 
