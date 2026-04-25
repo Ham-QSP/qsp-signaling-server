@@ -23,4 +23,5 @@ data class AgentClientDescription (
     val agentName: String,
     val agentId: String,
     val agentSecret: String,
+    val description: String,
 )

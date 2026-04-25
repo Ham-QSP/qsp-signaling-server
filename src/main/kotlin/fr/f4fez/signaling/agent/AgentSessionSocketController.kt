@@ -45,6 +45,7 @@ class AgentSessionSocketController(
         session: WebSocketSession,
         serverDescription: ServerDescription,
     ): Mono<Void> {
+        logger.debug { "{${session.id}} Start session" }
         val agentSession = agentSessionService.createSession()
 
         val input = messageProcessing(agentSession, session.receive())
@@ -88,6 +89,7 @@ class AgentSessionSocketController(
 
     private fun sendExchange(agentSession: AgentSession, agentSocketMessage: AgentSocketMessage) {
         if (!agentSession.handshakeDoneFlag) throw SessionNotFoundException("Handshake not established")
+        logger.debug { "{${agentSession.sessionId}} Send message: ${agentSocketMessage.javaClass.simpleName}" }
         agentSession.agentSessionSocketEmitter?.sendExchange(agentSocketMessage)
     }
 
@@ -98,12 +100,14 @@ class AgentSessionSocketController(
         return webSocketMessageFlux.mapNotNull { deserializeMessage(agentSession, it) }
             .flatMap { message -> checkAuthentication(agentSession, message!!) }
             .doOnNext { it?.let { processDeserializedMessage(agentSession, it) } }
+            .doOnError { logger.error(it) { "${agentSession.sessionId} Failed to process message" } }
             .then()
     }
 
     private fun checkAuthentication(agentSession: AgentSession, message: AgentSocketMessage): Mono<AgentSocketMessage> {
         val flux = if (message is AgentHelloMessage) {
             val agentId = UUID.fromString(message.data.agentId)
+            logger.debug("{{}} Agent hello for agent id {{}}", agentSession.sessionId, agentId)
             val ret: Mono<AgentSocketMessage> = agentRepository.findByIdAndSecret(agentId, message.data.agentSecret)
                 .switchIfEmpty(Mono.error(NullPointerException("Agent not found")))
                 .map { it.toAgentInformation() }

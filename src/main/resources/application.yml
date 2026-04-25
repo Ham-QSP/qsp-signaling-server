@@ -10,10 +10,16 @@ spring:
     url: r2dbc:postgresql://localhost:5432/postgres
     username: postgres
     password: pgpass
-
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000
+  output.ansi.enabled: ALWAYS
 agent:
   hmac:
     keyLength: 64
 
 logging.level:
   fr.f4fez: TRACE
+  org.springframework.security: DEBUG

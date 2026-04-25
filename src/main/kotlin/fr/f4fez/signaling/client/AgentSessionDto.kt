@@ -17,5 +17,8 @@ package fr.f4fez.signaling.client
 
 data class AgentSessionDto(
     val name: String,
-    val id: String
+    val id: String,
+    val description: String,
+    val version: String,
+    val type: String,
 )
