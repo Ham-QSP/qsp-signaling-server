@@ -14,8 +14,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://idp.example.com/issuer
-
+          issuer-uri: http://localhost:9000
+  output.ansi.enabled: ALWAYS
 agent:
   hmac:
     keyLength: 64

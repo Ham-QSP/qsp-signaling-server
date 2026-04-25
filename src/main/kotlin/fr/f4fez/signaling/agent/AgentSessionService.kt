@@ -36,7 +36,12 @@ class AgentSessionService {
 
 
     fun getSessions(): Flux<AgentSessionDto> =
-        sessions.values.map { AgentSessionDto(it.agentDescription!!.agentName, it.sessionId) }.toFlux()
+        sessions.values.map {
+            AgentSessionDto(
+                it.agentDescription!!.agentName, it.sessionId, it.agentDescription!!.description,
+                it.agentDescription!!.version, it.agentDescription!!.agentType
+            )
+        }.toFlux()
 
     fun createSession(): AgentSession =
         AgentSession(
