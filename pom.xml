@@ -9,7 +9,7 @@
     </parent>
     <groupId>fr.f4fez</groupId>
     <artifactId>qsp-signaling</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <name>qsp-signaling</name>
     <description>QSP Signaling Server</description>
     <url>https://github.com/f4fez/fez-remote-signal-server</url>
