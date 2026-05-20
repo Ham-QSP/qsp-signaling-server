@@ -20,6 +20,8 @@ on:
 
 permissions:
   contents: read
+  security-events: write
+  actions: read
 
 env:
   JAVA_VERSION: '25'
