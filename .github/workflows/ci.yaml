@@ -28,6 +28,7 @@ env:
   
 jobs:
   build:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -53,7 +54,7 @@ jobs:
           name: build
           path: target
   docker:
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name != 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -184,5 +185,5 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
           repository: f4fez/qsp-signaling-server
           readme-filepath: target/checkout/documentation/docker-hub-overview.md
-          short-description: QSP OAuth2 Authorization server
+          short-description: QSP Signaling server
           enable-url-completion: true
