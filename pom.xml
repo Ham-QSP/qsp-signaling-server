@@ -13,7 +13,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>qsp-signaling</name>
     <description>QSP Signaling Server</description>
-    <url/>
+    <url>https://github.com/f4fez/fez-remote-signal-server</url>
     <licenses>
         <license/>
     </licenses>
@@ -21,16 +21,17 @@
         <developer/>
     </developers>
     <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
+        <connection>scm:git:https://github.com/f4fez/fez-remote-signal-server.git</connection>
+        <developerConnection>scm:git:https://github.com/f4fez/fez-remote-signal-server.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/f4fez/fez-remote-signal-server</url>
     </scm>
     <properties>
         <java.version>25</java.version>
         <kotlin.version>2.3.20</kotlin.version>
         <kotlin-logging-jvm.version>7.0.3</kotlin-logging-jvm.version>
         <logback-classic.version>1.5.18</logback-classic.version>
+        <maven-release-plugin.version>3.1.1</maven-release-plugin.version>
     </properties>
     <dependencies>
         <dependency>
@@ -134,6 +135,16 @@
                         <version>${kotlin.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${maven-release-plugin.version}</version>
+                <configuration>
+                    <tagNameFormat>v@{project.version}</tagNameFormat>
+                    <pushChanges>true</pushChanges>
+                    <localCheckout>true</localCheckout>
+                </configuration>
             </plugin>
         </plugins>
     </build>
