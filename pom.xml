@@ -30,7 +30,7 @@
         <kotlin.version>2.3.20</kotlin.version>
         <kotlin-logging-jvm.version>7.0.3</kotlin-logging-jvm.version>
         <logback-classic.version>1.5.38</logback-classic.version>
-        <maven-release-plugin.version>3.1.1</maven-release-plugin.version>
+        <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
     </properties>
     <dependencies>
         <dependency>
