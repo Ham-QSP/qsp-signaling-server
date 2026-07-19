@@ -6,8 +6,13 @@ server:
   port: 7080
 
 spring:
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    url: jdbc:postgresql://localhost:5432/signaling
+    user: postgres
+    password: pgpass
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/postgres
+    url: r2dbc:postgresql://localhost:5432/signaling
     username: postgres
     password: pgpass
   security:
