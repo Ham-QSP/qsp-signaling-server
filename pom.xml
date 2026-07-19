@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.3</version>
+        <version>4.1.0</version>
         <relativePath /> <!-- lookup parent from repository -->
     </parent>
     <groupId>fr.f4fez</groupId>
@@ -29,7 +29,6 @@
         <java.version>25</java.version>
         <kotlin.version>2.3.20</kotlin.version>
         <kotlin-logging-jvm.version>7.0.3</kotlin-logging-jvm.version>
-        <logback-classic.version>1.5.38</logback-classic.version>
         <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
     </properties>
     <dependencies>
@@ -92,7 +91,6 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>${logback-classic.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
