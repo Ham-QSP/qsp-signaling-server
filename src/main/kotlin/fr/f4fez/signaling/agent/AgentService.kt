@@ -30,7 +30,7 @@ class AgentService(
 
 
     fun signalClient(clientSignalCommand: ClientSignalCommand): Mono<ClientSignalResponse> {
-        logger.debug("Client signal for agent session: ${clientSignalCommand.agentSessionId}")
+        logger.debug { "Client signal for agent session: ${clientSignalCommand.agentSessionId}" }
         val agentSession = sessionsService.getSession(clientSignalCommand.agentSessionId)
         return if (agentSession == null) {
             Mono.error { SessionNotFoundException("No matching agent session found") }

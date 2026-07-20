@@ -107,12 +107,12 @@ class AgentSessionSocketController(
     private fun checkAuthentication(agentSession: AgentSession, message: AgentSocketMessage): Mono<AgentSocketMessage> {
         val flux = if (message is AgentHelloMessage) {
             val agentId = UUID.fromString(message.data.agentId)
-            logger.debug("{{}} Agent hello for agent id {{}}", agentSession.sessionId, agentId)
+            logger.debug { "${agentSession.sessionId} Agent hello for agent id $agentId" }
             val ret: Mono<AgentSocketMessage> = agentRepository.findByIdAndSecret(agentId, message.data.agentSecret)
                 .switchIfEmpty(Mono.error(NullPointerException("Agent not found")))
                 .map { it.toAgentInformation() }
                 .doOnNext { agentSession.agentInformation = it }
-                .doOnNext { logger.debug("{{}} Login for agent id {{}}", agentSession.sessionId, it.id) }
+                .doOnNext { logger.debug { "${agentSession.sessionId} Login for agent id ${it.id}" } }
                 .map { _ -> message }
             ret
         } else {
