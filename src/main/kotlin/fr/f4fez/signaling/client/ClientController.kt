@@ -17,6 +17,7 @@ package fr.f4fez.signaling.client
 
 import fr.f4fez.signaling.agent.AgentService
 import fr.f4fez.signaling.agent.AgentSessionService
+import fr.f4fez.signaling.security.currentUserSubject
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -27,9 +28,9 @@ class ClientController(val agentService: AgentService,
 
     @PostMapping("signal")
     fun signal(@RequestBody clientSignalCommand: ClientSignalCommand) =
-        agentService.signalClient(clientSignalCommand)
+        currentUserSubject().flatMap { subject -> agentService.signalClient(clientSignalCommand, subject) }
 
     @GetMapping("agents")
-    fun listAgents() = agentSessionService.getSessions()
+    fun listAgents() = currentUserSubject().flatMapMany { subject -> agentSessionService.getSessions(subject) }
 
 }

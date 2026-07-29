@@ -16,6 +16,9 @@ package fr.f4fez.signaling.management
 
 import fr.f4fez.signaling.management.dal.AgentEntity
 import fr.f4fez.signaling.management.dal.AgentRepository
+import fr.f4fez.signaling.management.dal.StationGrantEntity
+import fr.f4fez.signaling.management.dal.StationGrantRepository
+import fr.f4fez.signaling.management.dal.StationGrantRole
 import fr.f4fez.signaling.management.dal.StationRepository
 import fr.f4fez.signaling.management.dto.*
 import org.springframework.beans.factory.annotation.Value
@@ -30,6 +33,7 @@ import java.util.*
 class StationService(
     val stationRepository: StationRepository,
     val agentRepository: AgentRepository,
+    val stationGrantRepository: StationGrantRepository,
     @Value("\${agent.hmac.keyLength}")
     val hmacKeyLength: Int,
 ) {
@@ -42,8 +46,13 @@ class StationService(
     fun getStations(): Flux<Station> =
         stationRepository.findAll().map { s -> s.toDTO() }
 
-    fun createStation(station: StationUpdate): Mono<Station> =
-        stationRepository.save(station.toEntity()).map { s -> s.toDTO() }
+    fun createStation(station: StationUpdate, subject: String): Mono<Station> =
+        stationRepository.save(station.toEntity())
+            .flatMap { s ->
+                stationGrantRepository.save(StationGrantEntity(s.id!!, subject, StationGrantRole.OWNER))
+                    .thenReturn(s)
+            }
+            .map { s -> s.toDTO() }
 
     fun getAgents(stationId: UUID): Flux<Agent> =
         agentRepository.findByStationId(stationId).map { a -> a.toDTO() }
@@ -71,6 +80,21 @@ class StationService(
         a.secret = secretBytes.toHex()
         return a
     }
+
+    fun getGrants(stationId: UUID): Flux<StationGrant> =
+        stationGrantRepository.findByStationId(stationId).map { it.toDTO() }
+
+    fun createGrant(stationId: UUID, grant: StationGrantUpdate): Mono<StationGrant> =
+        stationGrantRepository.save(grant.toEntity(stationId)).map { it.toDTO() }
+
+    fun updateGrant(stationId: UUID, grantId: UUID, grant: StationGrantUpdate): Mono<StationGrant> =
+        stationGrantRepository.findByIdAndStationId(grantId, stationId)
+            .map { it.apply { subject = grant.subject; role = grant.role } }
+            .flatMap { stationGrantRepository.save(it) }
+            .map { it.toDTO() }
+
+    fun deleteGrant(stationId: UUID, grantId: UUID): Mono<Void> =
+        stationGrantRepository.deleteByIdAndStationId(grantId, stationId)
 }
 
 fun ByteArray.toHex(): String = HexFormat.of().formatHex(this)

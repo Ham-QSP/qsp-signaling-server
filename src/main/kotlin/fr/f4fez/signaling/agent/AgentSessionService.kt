@@ -15,13 +15,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 package fr.f4fez.signaling.agent
 
 import fr.f4fez.signaling.client.AgentSessionDto
+import fr.f4fez.signaling.management.dal.StationGrantRepository
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
-import reactor.kotlin.core.publisher.toFlux
+import reactor.core.publisher.Mono
 import java.util.*
 
 @Service
-class AgentSessionService {
+class AgentSessionService(
+    private val stationGrantRepository: StationGrantRepository,
+) {
     private val sessions: MutableMap<String, AgentSession> = Collections.synchronizedMap(mutableMapOf())
 
     private fun registerSession(session: AgentSession) {
@@ -35,13 +38,19 @@ class AgentSessionService {
     fun getSession(sessionId: String): AgentSession? = sessions[sessionId]
 
 
-    fun getSessions(): Flux<AgentSessionDto> =
-        sessions.values.map {
-            AgentSessionDto(
-                it.agentDescription!!.agentName, it.sessionId, it.agentDescription!!.description,
-                it.agentDescription!!.version, it.agentDescription!!.agentType
-            )
-        }.toFlux()
+    fun getSessions(subject: String): Flux<AgentSessionDto> =
+        Flux.fromIterable(sessions.values)
+            .filterWhen { session ->
+                val stationId = session.agentInformation?.stationId
+                if (stationId == null) Mono.just(false)
+                else stationGrantRepository.existsByStationIdAndSubject(stationId, subject)
+            }
+            .map {
+                AgentSessionDto(
+                    it.agentDescription!!.agentName, it.sessionId, it.agentDescription!!.description,
+                    it.agentDescription!!.version, it.agentDescription!!.agentType
+                )
+            }
 
     fun createSession(): AgentSession =
         AgentSession(
