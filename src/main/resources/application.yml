@@ -19,7 +19,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://192.168.10.40:81/auth
+          issuer-uri: http://localhost:9000
   output.ansi.enabled: ALWAYS
 agent:
   hmac:

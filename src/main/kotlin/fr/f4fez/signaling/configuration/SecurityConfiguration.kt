@@ -23,6 +23,7 @@ fun springSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain 
             exchanges
                 .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .pathMatchers("/server/session").permitAll()
+                .pathMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**", "/webjars/**").permitAll()
                 .anyExchange().authenticated()
             }
         .cors(Customizer.withDefaults())
