@@ -60,3 +60,17 @@ Start the application with:
 ```shell
 mvn spring-boot:run -f pom.xml
 ```
+
+## Database migrations
+The schema (tables `station` and `agent`) is created and updated by Liquibase
+at startup, using the `spring.liquibase.*` settings.
+
+### Sharing a database with the authentication service
+The signaling server and the QSP authentication service both define a changeset
+`1` / `Florian MAZEN` in `00000_initial.yaml`. With the default Liquibase tracking
+tables (`databasechangelog`, `databasechangeloglock`) they collide. When both
+services use the same database, set on the signaling server:
+```
+SPRING_LIQUIBASE_DATABASE_CHANGE_LOG_TABLE=signaling_databasechangelog
+SPRING_LIQUIBASE_DATABASE_CHANGE_LOG_LOCK_TABLE=signaling_databasechangeloglock
+```
