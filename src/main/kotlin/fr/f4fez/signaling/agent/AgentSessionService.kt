@@ -14,7 +14,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 package fr.f4fez.signaling.agent
 
-import fr.f4fez.signaling.client.AgentSessionDto
 import fr.f4fez.signaling.management.dal.StationGrantRepository
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -25,17 +24,21 @@ import java.util.*
 class AgentSessionService(
     private val stationGrantRepository: StationGrantRepository,
 ) {
-    private val sessions: MutableMap<String, AgentSession> = Collections.synchronizedMap(mutableMapOf())
+    private val sessions: MutableMap<UUID, AgentSession> = Collections.synchronizedMap(mutableMapOf())
 
     private fun registerSession(session: AgentSession) {
         sessions[session.sessionId] = session
     }
 
-    private fun unregisterSession(sessionId: String) {
+    private fun unregisterSession(sessionId: UUID) {
         sessions.remove(sessionId)
     }
 
-    fun getSession(sessionId: String): AgentSession? = sessions[sessionId]
+    fun getSession(sessionId: String): AgentSession? =
+        runCatching { UUID.fromString(sessionId) }.getOrNull()?.let { sessions[it] }
+    fun getSession(sessionId: UUID): AgentSession? = sessions[sessionId]
+
+    fun getSessionByAgentId(agentId: UUID) = sessions.values.filter { it.handshakeDoneFlag }.firstOrNull() { it.agentDescription?.agentId == agentId.toString() }
 
 
     fun getSessions(subject: String): Flux<AgentSessionDto> =
@@ -47,7 +50,7 @@ class AgentSessionService(
             }
             .map {
                 AgentSessionDto(
-                    it.agentDescription!!.agentName, it.sessionId, it.agentDescription!!.description,
+                    it.agentDescription!!.agentName, it.sessionId.toString(), it.agentDescription!!.description,
                     it.agentDescription!!.version, it.agentDescription!!.agentType
                 )
             }

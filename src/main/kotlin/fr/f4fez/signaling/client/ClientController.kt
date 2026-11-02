@@ -17,12 +17,14 @@ package fr.f4fez.signaling.client
 
 import fr.f4fez.signaling.agent.AgentService
 import fr.f4fez.signaling.agent.AgentSessionService
+import fr.f4fez.signaling.agent.ClientSignalCommand
 import fr.f4fez.signaling.security.currentUserSubject
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/client")
 @CrossOrigin(origins = ["http://localhost:3000"])
+@Deprecated(message = "Moved", level = DeprecationLevel.HIDDEN, replaceWith = ReplaceWith("fr.f4fez.signaling.agent.AgentController"))
 class ClientController(val agentService: AgentService,
     val agentSessionService: AgentSessionService) {
 

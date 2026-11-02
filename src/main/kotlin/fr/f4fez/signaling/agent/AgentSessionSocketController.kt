@@ -19,8 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import fr.f4fez.signaling.client.AgentDisconnectedException
-import fr.f4fez.signaling.client.SessionNotFoundException
 import fr.f4fez.signaling.management.dal.AgentRepository
 import fr.f4fez.signaling.server.ServerDescription
 import io.github.oshai.kotlinlogging.KotlinLogging

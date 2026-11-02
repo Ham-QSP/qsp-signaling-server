@@ -14,15 +14,32 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 package fr.f4fez.signaling.management.dto
 
+import fr.f4fez.signaling.agent.AgentSession
 import fr.f4fez.signaling.management.dal.AgentEntity
 import java.util.*
 
 data class Agent(
     val station: UUID,
     val displayName: String,
-    val secret: String?,
-    val id: UUID?,
-)
+    val secret: String? = null,
+    val id: UUID? = null,
+    val sessionId: UUID? = null,
+    val sessionName: String? = null,
+    val sessionDescription: String? = null,
+    val sessionVersion: String? = null,
+    val sessionType: String? = null,
+) {
+
+    fun copyWithSession(session: AgentSession): Agent =
+        this.copy(
+            sessionName = session.agentDescription?.agentName,
+            sessionDescription = session.agentDescription?.description,
+            sessionVersion = session.agentDescription?.version,
+            sessionType = session.agentDescription?.agentType,
+            sessionId = session.sessionId
+        )
+
+}
 
 fun AgentEntity.toDTO() = Agent(stationId, displayName, secret?.substring(0, 4) + "***", id)
 fun AgentEntity.toDTOWithSecret() = Agent(stationId, displayName, secret, id)

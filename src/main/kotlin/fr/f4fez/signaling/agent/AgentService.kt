@@ -15,13 +15,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 
 package fr.f4fez.signaling.agent
 
-import fr.f4fez.signaling.client.ClientSignalCommand
-import fr.f4fez.signaling.client.ClientSignalResponse
-import fr.f4fez.signaling.client.SessionNotFoundException
 import fr.f4fez.signaling.error.StationGrantAccessDeniedException
+import fr.f4fez.signaling.management.dal.AgentRepository
 import fr.f4fez.signaling.management.dal.StationGrantRepository
+import fr.f4fez.signaling.management.dto.Agent
+import fr.f4fez.signaling.management.dto.toDTO
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @Component
@@ -29,6 +30,7 @@ class AgentService(
     val sessionsService: AgentSessionService,
     val agentSessionSocketController: AgentSessionSocketController,
     val stationGrantRepository: StationGrantRepository,
+    val agentRepository: AgentRepository,
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -50,6 +52,13 @@ class AgentService(
                         .map { ClientSignalResponse(it.sdp) }
                 }
             }
+    }
+
+    fun getAgentsForSubject(subject: String): Flux<Agent> {
+        logger.debug { "Get agent for subject $subject" }
+        return agentRepository.findByStationGrantedSubject(subject).map { it.toDTO() }
+            .map { sessionsService.getSessionByAgentId(it.id!!)?.let(it::copyWithSession) ?: it }
+
     }
 
 }

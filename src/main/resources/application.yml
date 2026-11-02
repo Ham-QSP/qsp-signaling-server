@@ -27,3 +27,4 @@ agent:
 
 logging.level:
   root: INFO
+  fr.f4fez: DEBUG

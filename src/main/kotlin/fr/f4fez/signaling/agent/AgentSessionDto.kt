@@ -13,13 +13,12 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-package fr.f4fez.signaling.client
+package fr.f4fez.signaling.agent
 
-data class ClientSignalCommand(
-    var agentSessionId: String,
-    var clientSdp: String
-)
-
-data class ClientSignalResponse(
-    var serverSdp: String
+data class AgentSessionDto(
+    val name: String,
+    val id: String,
+    val description: String,
+    val version: String,
+    val type: String,
 )

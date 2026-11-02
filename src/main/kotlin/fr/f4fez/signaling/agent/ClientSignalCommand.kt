@@ -13,10 +13,13 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-package fr.f4fez.signaling.client
+package fr.f4fez.signaling.agent
 
-import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.ResponseStatus
+data class ClientSignalCommand(
+    var agentSessionId: String,
+    var clientSdp: String
+)
 
-@ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
-class AgentDisconnectedException(message: String) : RuntimeException(message)
+data class ClientSignalResponse(
+    var serverSdp: String
+)
