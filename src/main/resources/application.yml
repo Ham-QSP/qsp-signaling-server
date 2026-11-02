@@ -24,6 +24,9 @@ spring:
 agent:
   hmac:
     keyLength: 64
+  session:
+    helloTimeout: 10s
+    maxPendingConnections: 100
 
 logging.level:
   root: INFO

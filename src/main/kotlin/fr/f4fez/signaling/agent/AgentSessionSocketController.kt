@@ -22,11 +22,14 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import fr.f4fez.signaling.management.dal.AgentRepository
 import fr.f4fez.signaling.server.ServerDescription
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.Duration
 import java.util.*
 
 
@@ -34,6 +37,8 @@ import java.util.*
 class AgentSessionSocketController(
     private val agentSessionService: AgentSessionService,
     private val agentRepository: AgentRepository,
+    @Value("\${agent.session.helloTimeout:10s}")
+    private val helloTimeout: Duration,
 ) {
     private val logger = KotlinLogging.logger {}
     private val objectMapper: ObjectMapper =
@@ -45,6 +50,10 @@ class AgentSessionSocketController(
     ): Mono<Void> {
         logger.debug { "{${session.id}} Start session" }
         val agentSession = agentSessionService.createSession()
+        if (agentSession == null) {
+            logger.warn { "{${session.id}} Too many pending connections, rejecting" }
+            return session.close(CloseStatus.SERVICE_OVERLOAD)
+        }
 
         val input = messageProcessing(agentSession, session.receive())
 
@@ -69,7 +78,12 @@ class AgentSessionSocketController(
             }
         val output = session.send(source.map { objectMapper.writeValueAsString(it) }.map(session::textMessage))
 
-        return Mono.zip(input, output).then()
+        val watchdog = helloWatchdog(agentSession, helloTimeout) {
+            logger.info { "{${agentSession.sessionId}} No agent hello after $helloTimeout, closing" }
+            session.close(CloseStatus.POLICY_VIOLATION)
+        }.subscribe()
+
+        return Mono.zip(input, output).then().doFinally { watchdog.dispose() }
     }
 
     fun clientSignal(agentSession: AgentSession, sdp: String): Mono<ClientInitResponsePayload> {

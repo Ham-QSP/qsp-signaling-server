@@ -55,6 +55,13 @@ SPRING_DATASOURCE_USERNAME=qsp
 SPRING_DATASOURCE_PASSWORD=qsp_password
 ```
 
+Agent websocket (`/server/session`) protection, optional:
+```
+AGENT_SESSION_HELLOTIMEOUT=10s            # close the connection if no agent hello is received in time
+AGENT_SESSION_MAXPENDINGCONNECTIONS=100   # max open connections still waiting for their hello
+```
+These limits are global. Also rate limit new connections on `/server/session` at the reverse proxy level.
+
 ### Run
 Start the application with:
 ```shell
