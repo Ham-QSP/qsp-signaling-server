@@ -14,12 +14,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 package fr.f4fez.signaling.management
 
+import fr.f4fez.signaling.error.InvalidRequest
 import fr.f4fez.signaling.management.dal.AgentEntity
 import fr.f4fez.signaling.management.dal.AgentRepository
+import fr.f4fez.signaling.management.dal.StationGrantRepository
 import fr.f4fez.signaling.management.dal.StationRepository
 import fr.f4fez.signaling.management.dto.*
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.dao.DuplicateKeyException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.security.SecureRandom
@@ -30,6 +34,7 @@ import java.util.*
 class StationService(
     val stationRepository: StationRepository,
     val agentRepository: AgentRepository,
+    val stationGrantRepository: StationGrantRepository,
     @Value("\${agent.hmac.keyLength}")
     val hmacKeyLength: Int,
 ) {
@@ -39,11 +44,28 @@ class StationService(
         return stationRepository.deleteById(id)
     }
 
-    fun getStations(): Flux<Station> =
-        stationRepository.findAll().map { s -> s.toDTO() }
+    fun getStations(subject: String): Flux<Station> =
+        stationRepository.findByGrantedSubject(subject).map { s -> s.toDTO() }
 
-    fun createStation(station: StationUpdate): Mono<Station> =
-        stationRepository.save(station.toEntity()).map { s -> s.toDTO() }
+    fun getStation(id: UUID): Mono<Station> =
+        stationRepository.findById(id).map { s -> s.toDTO() }
+
+    fun updateStation(id: UUID, station: StationUpdate): Mono<Station> =
+        stationRepository.findById(id)
+            .map { s -> s.copy(mainQRZ = station.mainQRZ, description = station.description) }
+            .flatMap { s -> stationRepository.save(s) }
+            .onErrorMap(DuplicateKeyException::class.java) { e -> InvalidRequest("Station ${station.mainQRZ} already exists", e) }
+            .map { s -> s.toDTO() }
+    @Transactional
+    fun createStation(station: StationCreate): Mono<Station> =
+        Mono.fromCallable { station.validate() }
+            .then(stationRepository.save(station.toEntity()))
+            .onErrorMap(DuplicateKeyException::class.java) { e -> InvalidRequest("Station ${station.mainQRZ} already exists", e) }
+            .flatMap { s ->
+                stationGrantRepository.saveAll(station.grants.map { it.toEntity(s.id!!) })
+                    .then(Mono.just(s))
+            }
+            .map { s -> s.toDTO() }
 
     fun getAgents(stationId: UUID): Flux<Agent> =
         agentRepository.findByStationId(stationId).map { a -> a.toDTO() }
@@ -71,6 +93,21 @@ class StationService(
         a.secret = secretBytes.toHex()
         return a
     }
+
+    fun getGrants(stationId: UUID): Flux<StationGrant> =
+        stationGrantRepository.findByStationId(stationId).map { it.toDTO() }
+
+    fun createGrant(stationId: UUID, grant: StationGrantUpdate): Mono<StationGrant> =
+        stationGrantRepository.save(grant.toEntity(stationId)).map { it.toDTO() }
+
+    fun updateGrant(stationId: UUID, grantId: UUID, grant: StationGrantUpdate): Mono<StationGrant> =
+        stationGrantRepository.findByIdAndStationId(grantId, stationId)
+            .map { it.apply { subject = grant.subject; role = grant.role } }
+            .flatMap { stationGrantRepository.save(it) }
+            .map { it.toDTO() }
+
+    fun deleteGrant(stationId: UUID, grantId: UUID): Mono<Void> =
+        stationGrantRepository.deleteByIdAndStationId(grantId, stationId)
 }
 
 fun ByteArray.toHex(): String = HexFormat.of().formatHex(this)

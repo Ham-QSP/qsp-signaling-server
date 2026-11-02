@@ -14,6 +14,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 package fr.f4fez.signaling.management.dal
 
+import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -24,4 +25,7 @@ interface AgentRepository : R2dbcRepository<AgentEntity, UUID> {
     fun findByStationId(stationId: UUID): Flux<AgentEntity>
     fun deleteByIdAndStationId(id: UUID, stationId: UUID): Mono<Void>
     fun findByIdAndStationId(agentId: UUID, stationId: UUID): Mono<AgentEntity>
+
+    @Query("select a.id as id, a.station_id as station_id, a.display_name as display_name, a.secret as secret from agent a join station_grant sg on a.station_id = sg.station_id where sg.subject = :grantedSubject")
+    fun findByStationGrantedSubject(grantedSubject: String): Flux<AgentEntity>
 }

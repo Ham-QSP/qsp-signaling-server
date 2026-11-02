@@ -19,11 +19,15 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://192.168.10.40:81/auth
+          issuer-uri: http://localhost:9000
   output.ansi.enabled: ALWAYS
 agent:
   hmac:
     keyLength: 64
+  session:
+    helloTimeout: 10s
+    maxPendingConnections: 100
 
 logging.level:
   root: INFO
+  fr.f4fez: DEBUG

@@ -28,7 +28,7 @@ class AgentSession(
     var agentInformation: AgentInformation? = null
 
     var agentDescription: AgentClientDescription? = null
-    val sessionId: String = UUID.randomUUID().toString()
+    val sessionId: UUID = UUID.randomUUID()
     var agentSessionSocketEmitter: AgentSessionSocketEmitter? = null
     var handshakeDoneFlag = false
         private set

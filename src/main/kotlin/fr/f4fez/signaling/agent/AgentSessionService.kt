@@ -14,38 +14,68 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 package fr.f4fez.signaling.agent
 
-import fr.f4fez.signaling.client.AgentSessionDto
+import fr.f4fez.signaling.management.dal.StationGrantRepository
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
-import reactor.kotlin.core.publisher.toFlux
+import reactor.core.publisher.Mono
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 @Service
-class AgentSessionService {
-    private val sessions: MutableMap<String, AgentSession> = Collections.synchronizedMap(mutableMapOf())
+class AgentSessionService(
+    private val stationGrantRepository: StationGrantRepository,
+    @Value("\${agent.session.maxPendingConnections:100}")
+    private val maxPendingConnections: Int,
+) {
+    private val sessions: MutableMap<UUID, AgentSession> = Collections.synchronizedMap(mutableMapOf())
+
+    /** Open connections that have not completed the agent hello handshake yet. */
+    private val pendingConnections = AtomicInteger(0)
+
+    val pendingConnectionCount: Int get() = pendingConnections.get()
 
     private fun registerSession(session: AgentSession) {
         sessions[session.sessionId] = session
     }
 
-    private fun unregisterSession(sessionId: String) {
+    private fun unregisterSession(sessionId: UUID) {
         sessions.remove(sessionId)
     }
 
-    fun getSession(sessionId: String): AgentSession? = sessions[sessionId]
+    fun getSession(sessionId: String): AgentSession? =
+        runCatching { UUID.fromString(sessionId) }.getOrNull()?.let { sessions[it] }
+    fun getSession(sessionId: UUID): AgentSession? = sessions[sessionId]
+
+    fun getSessionByAgentId(agentId: UUID) = sessions.values.filter { it.handshakeDoneFlag }.firstOrNull() { it.agentDescription?.agentId == agentId.toString() }
 
 
-    fun getSessions(): Flux<AgentSessionDto> =
-        sessions.values.map {
-            AgentSessionDto(
-                it.agentDescription!!.agentName, it.sessionId, it.agentDescription!!.description,
-                it.agentDescription!!.version, it.agentDescription!!.agentType
-            )
-        }.toFlux()
+    fun getSessions(subject: String): Flux<AgentSessionDto> =
+        Flux.fromIterable(sessions.values)
+            .filterWhen { session ->
+                val stationId = session.agentInformation?.stationId
+                if (stationId == null) Mono.just(false)
+                else stationGrantRepository.existsByStationIdAndSubject(stationId, subject)
+            }
+            .map {
+                AgentSessionDto(
+                    it.agentDescription!!.agentName, it.sessionId.toString(), it.agentDescription!!.description,
+                    it.agentDescription!!.version, it.agentDescription!!.agentType
+                )
+            }
 
-    fun createSession(): AgentSession =
-        AgentSession(
-            { registerSession(it) },
-            { unregisterSession(it.sessionId) },
+    /** Returns null when too many connections are waiting for their hello. */
+    fun createSession(): AgentSession? {
+        if (pendingConnections.incrementAndGet() > maxPendingConnections) {
+            pendingConnections.decrementAndGet()
+            return null
+        }
+        val released = AtomicBoolean(false)
+        val releasePending = { if (released.compareAndSet(false, true)) pendingConnections.decrementAndGet() }
+        return AgentSession(
+            { releasePending(); registerSession(it) },
+            { releasePending(); unregisterSession(it.sessionId) },
         )
+    }
 }

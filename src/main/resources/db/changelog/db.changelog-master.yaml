@@ -2,3 +2,9 @@ databaseChangeLog:
   - include:
       file: 00000_initial.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 00001_station_grant.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 00002_agent_station_fk.yaml
+      relativeToChangelogFile: true

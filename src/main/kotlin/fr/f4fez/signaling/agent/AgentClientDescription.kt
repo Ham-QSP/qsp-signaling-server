@@ -24,4 +24,9 @@ data class AgentClientDescription (
     val agentId: String,
     val agentSecret: String,
     val description: String,
-)
+) {
+    override fun toString(): String =
+        "AgentClientDescription(agentType=$agentType, version=$version, protocolMajorVersion=$protocolMajorVersion, " +
+                "protocolMinorVersion=$protocolMinorVersion, agentName=$agentName, agentId=$agentId, " +
+                "agentSecret=***, description=$description)"
+}

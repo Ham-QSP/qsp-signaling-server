@@ -1,0 +1,83 @@
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>
+
+databaseChangeLog:
+- changeSet:
+    id:  1
+    author:  "Florian MAZEN"
+    changes:
+      - createTable:
+          tableName: station_grant_role
+          columns:
+            - column:
+                name: role
+                type: varchar(10)
+                constraints:
+                  primaryKey: true
+                  primaryKeyName: pk_station_grant_role
+                  nullable: false
+      - insert:
+          tableName: station_grant_role
+          columns:
+            - column:
+                name: role
+                value: OWNER
+      - insert:
+          tableName: station_grant_role
+          columns:
+            - column:
+                name: role
+                value: MEMBER
+      - createTable:
+          tableName: station_grant
+          columns:
+            - column:
+                name: id
+                type: uuid
+                defaultValueComputed: gen_random_uuid()
+                constraints:
+                  primaryKey: true
+                  primaryKeyName: pk_station_grant
+                  nullable: false
+            - column:
+                name: station_id
+                type: uuid
+                constraints:
+                  nullable: false
+            - column:
+                name: subject
+                type: varchar(100)
+                constraints:
+                  nullable: false
+            - column:
+                name: role
+                type: varchar(10)
+                constraints:
+                  nullable: false
+      - addUniqueConstraint:
+          tableName: station_grant
+          columnNames: station_id, subject
+          constraintName: uq_station_grant_station_id_subject
+      - addForeignKeyConstraint:
+          baseTableName: station_grant
+          baseColumnNames: station_id
+          referencedTableName: station
+          referencedColumnNames: id
+          constraintName: fk_station_grant_station_id
+          onDelete: CASCADE
+      - addForeignKeyConstraint:
+          baseTableName: station_grant
+          baseColumnNames: role
+          referencedTableName: station_grant_role
+          referencedColumnNames: role
+          constraintName: fk_station_grant_role

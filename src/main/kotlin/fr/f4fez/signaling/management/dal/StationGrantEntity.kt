@@ -12,11 +12,18 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>
  */
+package fr.f4fez.signaling.management.dal
 
-package fr.f4fez.signaling.client
+import org.springframework.data.annotation.Id
+import org.springframework.data.relational.core.mapping.Table
+import java.util.*
 
-import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.ResponseStatus
+@Table("station_grant")
+data class StationGrantEntity(
+    var stationId: UUID,
+    var subject: String,
+    var role: StationGrantRole,
 
-@ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
-class AgentDisconnectedException(message: String) : RuntimeException(message)
+    @Id
+    val id: UUID? = null,
+)

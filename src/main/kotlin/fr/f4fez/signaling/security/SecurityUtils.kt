@@ -12,14 +12,14 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>
  */
+package fr.f4fez.signaling.security
 
-package fr.f4fez.signaling.client
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+import reactor.core.publisher.Mono
 
-data class ClientSignalCommand(
-    var agentSessionId: String,
-    var clientSdp: String
-)
-
-data class ClientSignalResponse(
-    var serverSdp: String
-)
+fun currentUserSubject(): Mono<String> =
+    ReactiveSecurityContextHolder.getContext()
+        .flatMap { Mono.justOrEmpty(it.authentication) }
+        .cast(JwtAuthenticationToken::class.java)
+        .flatMap { Mono.justOrEmpty(it.token.subject) }
