@@ -32,6 +32,11 @@ import reactor.core.publisher.Mono
 import java.time.Duration
 import java.util.*
 
+/** Calls [close] when the agent has not completed its hello handshake after [timeout]. */
+fun helloWatchdog(agentSession: AgentSession, timeout: Duration, close: () -> Mono<Void>): Mono<Void> =
+    Mono.delay(timeout)
+        .filter { !agentSession.handshakeDoneFlag }
+        .flatMap { close() }
 
 @Component
 class AgentSessionSocketController(
