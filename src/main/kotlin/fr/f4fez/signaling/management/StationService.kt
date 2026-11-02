@@ -17,14 +17,13 @@ package fr.f4fez.signaling.management
 import fr.f4fez.signaling.error.InvalidRequest
 import fr.f4fez.signaling.management.dal.AgentEntity
 import fr.f4fez.signaling.management.dal.AgentRepository
-import fr.f4fez.signaling.management.dal.StationGrantEntity
 import fr.f4fez.signaling.management.dal.StationGrantRepository
-import fr.f4fez.signaling.management.dal.StationGrantRole
 import fr.f4fez.signaling.management.dal.StationRepository
 import fr.f4fez.signaling.management.dto.*
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.security.SecureRandom
@@ -57,12 +56,14 @@ class StationService(
             .flatMap { s -> stationRepository.save(s) }
             .onErrorMap(DuplicateKeyException::class.java) { e -> InvalidRequest("Station ${station.mainQRZ} already exists", e) }
             .map { s -> s.toDTO() }
-    fun createStation(station: StationUpdate, subject: String): Mono<Station> =
-        stationRepository.save(station.toEntity())
+    @Transactional
+    fun createStation(station: StationCreate): Mono<Station> =
+        Mono.fromCallable { station.validate() }
+            .then(stationRepository.save(station.toEntity()))
             .onErrorMap(DuplicateKeyException::class.java) { e -> InvalidRequest("Station ${station.mainQRZ} already exists", e) }
             .flatMap { s ->
-                stationGrantRepository.save(StationGrantEntity(s.id!!, subject, StationGrantRole.OWNER))
-                    .thenReturn(s)
+                stationGrantRepository.saveAll(station.grants.map { it.toEntity(s.id!!) })
+                    .then(Mono.just(s))
             }
             .map { s -> s.toDTO() }
 

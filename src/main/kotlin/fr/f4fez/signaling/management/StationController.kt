@@ -18,6 +18,7 @@ import fr.f4fez.signaling.management.dto.Agent
 import fr.f4fez.signaling.management.dto.AgentUpdate
 import fr.f4fez.signaling.management.dto.StationGrant
 import fr.f4fez.signaling.management.dto.StationGrantUpdate
+import fr.f4fez.signaling.management.dto.StationCreate
 import fr.f4fez.signaling.management.dto.StationUpdate
 import fr.f4fez.signaling.management.dto.Station
 import fr.f4fez.signaling.security.currentUserSubject
@@ -35,9 +36,9 @@ class StationController(val stationService: StationService) {
     @GetMapping
     fun getStations(): Flux<Station> = currentUserSubject().flatMapMany { subject -> stationService.getStations(subject) }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    fun createStation(@RequestBody station: StationUpdate): Mono<Station> =
-        currentUserSubject().flatMap { subject -> stationService.createStation(station, subject) }
+    fun createStation(@RequestBody station: StationCreate): Mono<Station> = stationService.createStation(station)
 
     @PreAuthorize("@stationAccess.isMember(#id)")
     @GetMapping("/{id}")
