@@ -59,6 +59,7 @@ class StationService(
             .map { s -> s.toDTO() }
     fun createStation(station: StationUpdate, subject: String): Mono<Station> =
         stationRepository.save(station.toEntity())
+            .onErrorMap(DuplicateKeyException::class.java) { e -> InvalidRequest("Station ${station.mainQRZ} already exists", e) }
             .flatMap { s ->
                 stationGrantRepository.save(StationGrantEntity(s.id!!, subject, StationGrantRole.OWNER))
                     .thenReturn(s)
