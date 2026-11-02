@@ -33,11 +33,20 @@ import java.util.*
 class StationController(val stationService: StationService) {
 
     @GetMapping
-    fun getStation(): Flux<Station> = currentUserSubject().flatMapMany { subject -> stationService.getStations(subject) }
+    fun getStations(): Flux<Station> = currentUserSubject().flatMapMany { subject -> stationService.getStations(subject) }
 
     @PostMapping
     fun createStation(@RequestBody station: StationUpdate): Mono<Station> =
         currentUserSubject().flatMap { subject -> stationService.createStation(station, subject) }
+
+    @PreAuthorize("@stationAccess.isMember(#id)")
+    @GetMapping("/{id}")
+    fun getStation(@P("id") @PathVariable("id") id: UUID): Mono<Station> = stationService.getStation(id)
+
+    @PreAuthorize("@stationAccess.isOwner(#id)")
+    @PutMapping("/{id}")
+    fun updateStation(@P("id") @PathVariable("id") id: UUID, @RequestBody station: StationUpdate): Mono<Station> =
+        stationService.updateStation(id, station)
 
     @PreAuthorize("@stationAccess.isOwner(#id)")
     @DeleteMapping("/{id}")
