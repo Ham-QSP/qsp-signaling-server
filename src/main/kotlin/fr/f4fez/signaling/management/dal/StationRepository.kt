@@ -1,22 +1,26 @@
 /*
-This program is free software: you can redistribute it and/or modify 
-it under the terms of the GNU General Public License as published by 
-the Free Software Foundation, either version 3 of the License, 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License,
 or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, but 
-WITHOUT ANY WARRANTY; without even the implied warranty of 
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 General Public License for more details.
 
-You should have received a copy of the GNU General Public License 
+You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 package fr.f4fez.signaling.management.dal
 
+import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
+import reactor.core.publisher.Flux
 import java.util.*
 
-interface StationRepository : R2dbcRepository<StationEntity, UUID>{
+interface StationRepository : R2dbcRepository<StationEntity, UUID> {
 
+    @Query("select s.id as id, s.main_qrz as main_qrz, s.description as description from station s join station_grant sg on s.id = sg.station_id where sg.subject = :subject")
+    fun findByGrantedSubject(subject: String): Flux<StationEntity>
 }

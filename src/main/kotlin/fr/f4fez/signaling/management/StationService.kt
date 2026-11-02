@@ -43,9 +43,8 @@ class StationService(
         return stationRepository.deleteById(id)
     }
 
-    fun getStations(): Flux<Station> =
-        stationRepository.findAll().map { s -> s.toDTO() }
-
+    fun getStations(subject: String): Flux<Station> =
+        stationRepository.findByGrantedSubject(subject).map { s -> s.toDTO() }
     fun createStation(station: StationUpdate, subject: String): Mono<Station> =
         stationRepository.save(station.toEntity())
             .flatMap { s ->
