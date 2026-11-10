@@ -51,7 +51,8 @@ class StationService(
         stationRepository.findById(id).map { s -> s.toDTO() }
 
     fun updateStation(id: UUID, station: StationUpdate): Mono<Station> =
-        stationRepository.findById(id)
+        Mono.fromCallable { station.validate() }
+            .then(stationRepository.findById(id))
             .map { s -> s.copy(mainQRZ = station.mainQRZ, description = station.description) }
             .flatMap { s -> stationRepository.save(s) }
             .onErrorMap(DuplicateKeyException::class.java) { e -> InvalidRequest("Station ${station.mainQRZ} already exists", e) }
