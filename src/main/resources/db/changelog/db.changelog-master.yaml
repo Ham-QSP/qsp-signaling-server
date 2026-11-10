@@ -8,3 +8,6 @@ databaseChangeLog:
   - include:
       file: 00002_agent_station_fk.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 00003_station_main_qrz_format.yaml
+      relativeToChangelogFile: true

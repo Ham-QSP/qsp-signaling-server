@@ -14,11 +14,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 package fr.f4fez.signaling.management.dto
 
+import fr.f4fez.signaling.error.InvalidRequest
 import fr.f4fez.signaling.management.dal.StationEntity
 
 class StationUpdate(
     var mainQRZ: String,
     var description: String
-)
+) {
+    /** Throws [InvalidRequest] when the station is not acceptable. */
+    fun validate() = validateMainQRZ(mainQRZ)
+}
 
 fun StationUpdate.toEntity() = StationEntity(mainQRZ, description)

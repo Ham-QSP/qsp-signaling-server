@@ -20,6 +20,14 @@ import fr.f4fez.signaling.management.dal.StationGrantRole
 
 private const val MAX_QRZ_LENGTH = 20
 private const val MAX_SUBJECT_LENGTH = 100
+private val QRZ_FORMAT = Regex("^[A-Z0-9_]+$")
+
+/** Throws [InvalidRequest] when [mainQRZ] is not a valid station name. */
+fun validateMainQRZ(mainQRZ: String) {
+    if (mainQRZ.length > MAX_QRZ_LENGTH || !QRZ_FORMAT.matches(mainQRZ)) {
+        throw InvalidRequest("mainQRZ must be between 1 and $MAX_QRZ_LENGTH characters matching ${QRZ_FORMAT.pattern}")
+    }
+}
 
 class StationCreate(
     var mainQRZ: String,
@@ -28,9 +36,7 @@ class StationCreate(
 ) {
     /** Throws [InvalidRequest] when the station or its initial grants are not acceptable. */
     fun validate() {
-        if (mainQRZ.isBlank() || mainQRZ.length > MAX_QRZ_LENGTH) {
-            throw InvalidRequest("mainQRZ must be between 1 and $MAX_QRZ_LENGTH characters")
-        }
+        validateMainQRZ(mainQRZ)
         if (grants.none { it.role == StationGrantRole.OWNER }) {
             throw InvalidRequest("At least one grant with the OWNER role is required")
         }
