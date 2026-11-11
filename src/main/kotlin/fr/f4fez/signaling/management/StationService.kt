@@ -103,8 +103,13 @@ class StationService(
     fun getGrants(stationId: UUID): Flux<StationGrant> =
         stationGrantRepository.findByStationId(stationId).map { it.toDTO() }
 
+    /** Idempotent: a subject that already has a grant on the station gets the sent role instead of a second grant. */
     fun createGrant(stationId: UUID, grant: StationGrantUpdate): Mono<StationGrant> =
-        stationGrantRepository.save(grant.toEntity(stationId)).map { it.toDTO() }
+        stationGrantRepository.findByStationIdAndSubject(stationId, grant.subject)
+            .map { existing -> existing.apply { role = grant.role } }
+            .switchIfEmpty(Mono.fromCallable { grant.toEntity(stationId) })
+            .flatMap { stationGrantRepository.save(it) }
+            .map { it.toDTO() }
 
     fun updateGrant(stationId: UUID, grantId: UUID, grant: StationGrantUpdate): Mono<StationGrant> =
         stationGrantRepository.findByIdAndStationId(grantId, stationId)

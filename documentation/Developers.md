@@ -68,3 +68,18 @@ DOCKER_HUB_TOKEN
 The same Docker Hub secrets are used to publish the Docker Hub overview.
 
 The repository must also allow `GITHUB_TOKEN` to push the release commits and Git tag, and to create the GitHub Release.
+
+## Roles and station provisioning
+
+Roles are read from the `roles` claim of the access token (prefix `ROLE_` is added).
+
+- `ADMIN`: can create stations and grants.
+- `SYS_AUTH`: used by the authentication server only, with a short-lived internal token, to provision the station of a newly registered user.
+
+`POST /station` is open to `ADMIN` and `SYS_AUTH`. When a station with the same `mainQRZ` already exists it answers `409` with the station id:
+
+```json
+{ "message": "Station F4FEZ already exists", "stationId": "3f1c…" }
+```
+
+`POST /station/{stationId}/grant` is open to the station OWNER, `ADMIN` and `SYS_AUTH`. It is idempotent: when the subject already has a grant on the station, that grant gets the sent role (a `MEMBER` becomes `OWNER`) instead of a duplicate being created.
