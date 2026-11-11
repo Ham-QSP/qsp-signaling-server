@@ -36,7 +36,7 @@ class StationController(val stationService: StationService) {
     @GetMapping
     fun getStations(): Flux<Station> = currentUserSubject().flatMapMany { subject -> stationService.getStations(subject) }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYS_AUTH')")
     @PostMapping
     fun createStation(@RequestBody station: StationCreate): Mono<Station> = stationService.createStation(station)
 
