@@ -36,7 +36,7 @@ class StationController(val stationService: StationService) {
     @GetMapping
     fun getStations(): Flux<Station> = currentUserSubject().flatMapMany { subject -> stationService.getStations(subject) }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYS_AUTH')")
     @PostMapping
     fun createStation(@RequestBody station: StationCreate): Mono<Station> = stationService.createStation(station)
 
@@ -73,7 +73,7 @@ class StationController(val stationService: StationService) {
     @GetMapping("/{stationId}/grant")
     fun getGrants(@P("stationId") @PathVariable("stationId") stationId: UUID): Flux<StationGrant> = stationService.getGrants(stationId)
 
-    @PreAuthorize("@stationAccess.isOwner(#stationId)")
+    @PreAuthorize("@stationAccess.canCreateGrant(#stationId)")
     @PostMapping("/{stationId}/grant")
     fun createGrant(@P("stationId") @PathVariable("stationId") stationId: UUID, @RequestBody grant: StationGrantUpdate): Mono<StationGrant> =
         stationService.createGrant(stationId, grant)

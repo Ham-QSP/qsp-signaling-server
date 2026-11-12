@@ -17,6 +17,7 @@ package fr.f4fez.signaling.security
 import fr.f4fez.signaling.management.dal.StationGrantRepository
 import fr.f4fez.signaling.management.dal.StationGrantRole
 import org.springframework.stereotype.Component
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import reactor.core.publisher.Mono
 import java.util.*
 
@@ -41,4 +42,15 @@ class StationAccess(
                     .map { it.role == StationGrantRole.OWNER }
             }
             .defaultIfEmpty(false)
+
+    /** Grants are created by the station OWNER, and by the ADMIN and SYS_AUTH roles (the authentication server). */
+    fun canCreateGrant(stationId: UUID): Mono<Boolean> =
+        ReactiveSecurityContextHolder.getContext()
+            .map { context -> context.authentication?.authorities?.any { it.authority in GRANT_ROLES } == true }
+            .defaultIfEmpty(false)
+            .flatMap { privileged -> if (privileged) Mono.just(true) else isOwner(stationId) }
+
+    private companion object {
+        val GRANT_ROLES = setOf("ROLE_ADMIN", "ROLE_SYS_AUTH")
+    }
 }

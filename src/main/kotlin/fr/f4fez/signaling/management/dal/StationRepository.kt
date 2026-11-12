@@ -17,10 +17,13 @@ package fr.f4fez.signaling.management.dal
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.util.*
 
 interface StationRepository : R2dbcRepository<StationEntity, UUID> {
 
     @Query("select s.id as id, s.main_qrz as main_qrz, s.description as description from station s join station_grant sg on s.id = sg.station_id where sg.subject = :subject")
     fun findByGrantedSubject(subject: String): Flux<StationEntity>
+
+    fun findByMainQRZ(mainQRZ: String): Mono<StationEntity>
 }

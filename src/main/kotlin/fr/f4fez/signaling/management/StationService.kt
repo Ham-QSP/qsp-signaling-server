@@ -15,8 +15,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
 package fr.f4fez.signaling.management
 
 import fr.f4fez.signaling.error.InvalidRequest
+import fr.f4fez.signaling.error.StationAlreadyExistsException
 import fr.f4fez.signaling.management.dal.AgentEntity
 import fr.f4fez.signaling.management.dal.AgentRepository
+import fr.f4fez.signaling.management.dal.StationEntity
 import fr.f4fez.signaling.management.dal.StationGrantRepository
 import fr.f4fez.signaling.management.dal.StationRepository
 import fr.f4fez.signaling.management.dto.*
@@ -60,7 +62,10 @@ class StationService(
     @Transactional
     fun createStation(station: StationCreate): Mono<Station> =
         Mono.fromCallable { station.validate() }
-            .then(stationRepository.save(station.toEntity()))
+            .then(Mono.defer { stationRepository.findByMainQRZ(station.mainQRZ) })
+            .flatMap { existing -> Mono.error<StationEntity>(StationAlreadyExistsException(station.mainQRZ, existing.id!!)) }
+            .switchIfEmpty(Mono.defer { stationRepository.save(station.toEntity()) })
+            // Only reached when a concurrent request created the station in between; the transaction is lost then
             .onErrorMap(DuplicateKeyException::class.java) { e -> InvalidRequest("Station ${station.mainQRZ} already exists", e) }
             .flatMap { s ->
                 stationGrantRepository.saveAll(station.grants.map { it.toEntity(s.id!!) })
@@ -98,8 +103,13 @@ class StationService(
     fun getGrants(stationId: UUID): Flux<StationGrant> =
         stationGrantRepository.findByStationId(stationId).map { it.toDTO() }
 
+    /** Idempotent: a subject that already has a grant on the station gets the sent role instead of a second grant. */
     fun createGrant(stationId: UUID, grant: StationGrantUpdate): Mono<StationGrant> =
-        stationGrantRepository.save(grant.toEntity(stationId)).map { it.toDTO() }
+        stationGrantRepository.findByStationIdAndSubject(stationId, grant.subject)
+            .map { existing -> existing.apply { role = grant.role } }
+            .switchIfEmpty(Mono.fromCallable { grant.toEntity(stationId) })
+            .flatMap { stationGrantRepository.save(it) }
+            .map { it.toDTO() }
 
     fun updateGrant(stationId: UUID, grantId: UUID, grant: StationGrantUpdate): Mono<StationGrant> =
         stationGrantRepository.findByIdAndStationId(grantId, stationId)
