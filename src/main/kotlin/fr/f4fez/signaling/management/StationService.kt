@@ -14,6 +14,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>
  */
 package fr.f4fez.signaling.management
 
+import fr.f4fez.signaling.agent.AgentSessionService
 import fr.f4fez.signaling.error.InvalidRequest
 import fr.f4fez.signaling.error.StationAlreadyExistsException
 import fr.f4fez.signaling.management.dal.AgentEntity
@@ -37,6 +38,7 @@ class StationService(
     val stationRepository: StationRepository,
     val agentRepository: AgentRepository,
     val stationGrantRepository: StationGrantRepository,
+    val sessionsService: AgentSessionService,
     @Value("\${agent.hmac.keyLength}")
     val hmacKeyLength: Int,
 ) {
@@ -75,6 +77,7 @@ class StationService(
 
     fun getAgents(stationId: UUID): Flux<Agent> =
         agentRepository.findByStationId(stationId).map { a -> a.toDTO() }
+            .map { sessionsService.getSessionByAgentId(it.id!!)?.let(it::copyWithSession) ?: it }
 
     fun registerAgent(stationId: UUID, agent: AgentUpdate): Mono<Agent> {
         val secretBytes = ByteArray(hmacKeyLength)
