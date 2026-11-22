@@ -9,7 +9,7 @@
     </parent>
     <groupId>fr.f4fez</groupId>
     <artifactId>qsp-signaling</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.1-SNAPSHOT</version>
     <name>qsp-signaling</name>
     <description>QSP Signaling Server</description>
     <url>https://github.com/Ham-QSP/qsp-signaling-server</url>
@@ -22,7 +22,7 @@
     <scm>
         <connection>scm:git:https://github.com/Ham-QSP/qsp-signaling-server.git</connection>
         <developerConnection>scm:git:https://github.com/Ham-QSP/qsp-signaling-server.git</developerConnection>
-        <tag>v0.2.0</tag>
+        <tag>v0.1.0</tag>
         <url>https://github.com/Ham-QSP/qsp-signaling-server</url>
     </scm>
     <properties>
