@@ -9,10 +9,10 @@
     </parent>
     <groupId>fr.f4fez</groupId>
     <artifactId>qsp-signaling</artifactId>
-    <version>0.1.2</version>
+    <version>0.1.2-SNAPSHOT</version>
     <name>qsp-signaling</name>
     <description>QSP Signaling Server</description>
-    <url>https://github.com/f4fez/fez-remote-signal-server</url>
+    <url>https://github.com/Ham-QSP/qsp-signaling-server</url>
     <licenses>
         <license />
     </licenses>
@@ -20,10 +20,10 @@
         <developer />
     </developers>
     <scm>
-        <connection>scm:git:https://github.com/f4fez/fez-remote-signal-server.git</connection>
-        <developerConnection>scm:git:https://github.com/f4fez/fez-remote-signal-server.git</developerConnection>
-        <tag>v0.1.2</tag>
-        <url>https://github.com/f4fez/fez-remote-signal-server</url>
+        <connection>scm:git:https://github.com/Ham-QSP/qsp-signaling-server.git</connection>
+        <developerConnection>scm:git:https://github.com/Ham-QSP/qsp-signaling-server.git</developerConnection>
+        <tag>v0.1.0</tag>
+        <url>https://github.com/Ham-QSP/qsp-signaling-server</url>
     </scm>
     <properties>
         <java.version>25</java.version>
